@@ -9,11 +9,11 @@ type Config struct {
 }
 
 type Postgres struct {
-	Host     string `env:"POSTGRES_HOST"`
-	Port     int    `env:"POSTGRES_PORT"`
-	Database string `env:"POSTGRES_DATABASE"`
-	User     string `env:"POSTGRES_USER"`
-	Password string `env:"POSTGRES_PASSWORD"`
+	Host     string `env:"POSTGRES_HOST, default=localhost"`
+	Port     int    `env:"POSTGRES_PORT, default=5432"`
+	Database string `env:"POSTGRES_DATABASE, default=taxi-user"`
+	User     string `env:"POSTGRES_USER, default=postgres"`
+	Password string `env:"POSTGRES_PASSWORD, default=secret"`
 	SSLMode  string `env:"POSTGRES_SSLMODE, default=disable"`
 }
 
