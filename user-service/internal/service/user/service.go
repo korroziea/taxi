@@ -61,7 +61,6 @@ func (s *Service) doesUserExist(ctx context.Context, phone string) error {
 	return domain.ErrUserAlreadyExists
 }
 
-// todo: rework
 func (s *Service) SignIn(ctx context.Context, user domain.SignInUser) error {
 	_, err := s.repo.FindByPhoneAndPassword(ctx, user)
 	if err != nil {

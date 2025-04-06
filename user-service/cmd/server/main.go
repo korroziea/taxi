@@ -22,7 +22,6 @@ func main() {
 	if err := envconfig.Process(ctx, &cfg); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(cfg) // todo: fix
 
 	l, _ := zap.NewProduction()
 	defer l.Sync()
@@ -30,7 +29,9 @@ func main() {
 
 	app, err := bootstrap.New(l, cfg)
 	if err != nil {
-		l.Error("Application initialization failed", zap.Error(err))
+		l.Fatal("Application initialization failed", zap.Error(err))
+		
+		return
 	}
 	l.Info("Application initialized")
 

@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/korroziea/taxi/user-service/internal/config"
@@ -24,8 +25,8 @@ type App struct {
 
 func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	db, _, err := psql.Connect(cfg.Postgres)
-	if err != nil {
-		l.Error("can't connect to database", zap.Error(err))
+	if err != nil {		
+		return nil, fmt.Errorf("psql.Connect: %w", err)
 	}
 
 	repo := userrepo.New(db)
