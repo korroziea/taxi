@@ -16,11 +16,11 @@ const users = "users"
 
 var (
 	userColumns = []string{
-		"id", "first_name", "email", "password", "created_at", "updated_at",
+		"id", "first_name", "email", "phone", "password", "created_at", "updated_at",
 	}
 
 	userColumnsWithoutPassword = []string{
-		"id", "first_name", "email", "created_at", "updated_at",
+		"id", "first_name", "email", "phone", "created_at", "updated_at",
 	}
 )
 
@@ -58,7 +58,9 @@ func (r *Repo) Create(ctx context.Context, user domain.SignUpUser) (domain.User,
 			time.Now(),
 		).
 		Suffix(
-			fmt.Sprintf("RETURNING %s", userColumnsWithoutPassword),
+			fmt.Sprintf(
+				"RETURNING id, first_name, email, phone, created_at, updated_at",
+			),
 		).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()

@@ -25,7 +25,7 @@ type App struct {
 func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	db, _, err := psql.Connect(cfg.Postgres)
 	if err != nil {
-
+		l.Error("can't connect to database", zap.Error(err))
 	}
 
 	repo := userrepo.New(db)

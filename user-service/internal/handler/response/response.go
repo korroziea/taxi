@@ -2,6 +2,7 @@ package response
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,8 @@ type ErrResponse struct {
 }
 
 func Error(c *gin.Context, err error) {
+	fmt.Println(err)
+
 	switch {
 	case errors.Is(err, domain.ErrUserAlreadyExists):
 		c.JSON(http.StatusBadRequest, ErrResponse{
