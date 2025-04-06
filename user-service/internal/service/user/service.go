@@ -51,7 +51,7 @@ func (s *Service) SignUp(ctx context.Context, user domain.SignUpUser) error {
 func (s *Service) doesUserExist(ctx context.Context, phone string) error {
 	_, err := s.repo.FindByPhone(ctx, phone)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, domain.ErrUserNotFound) {
 			return nil
 		}
 

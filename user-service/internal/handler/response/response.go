@@ -23,6 +23,11 @@ func Error(c *gin.Context, err error) {
 			ErrCode: -40,
 			Msg:     "user with the same phone already exists",
 		})
+	case errors.Is(err, domain.ErrUserNotFound):
+		c.JSON(http.StatusBadRequest, ErrResponse{
+			ErrCode: -44,
+			Msg:     "phone or password is incorrect",
+		})
 	default:
 		c.JSON(http.StatusInternalServerError, ErrResponse{
 			ErrCode: -10,

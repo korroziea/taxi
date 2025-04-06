@@ -125,7 +125,7 @@ func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domai
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.User{}, fmt.Errorf("client: %w", domain.ErrNotFound)
+			return domain.User{}, fmt.Errorf("client: %w", domain.ErrUserNotFound)
 		}
 
 		return domain.User{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
