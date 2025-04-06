@@ -28,7 +28,10 @@ func main() {
 	defer l.Sync()
 	l.Info("Logger initialized")
 
-	app := bootstrap.New(l, cfg)
+	app, err := bootstrap.New(l, cfg)
+	if err != nil {
+		l.Error("Application initialization failed", zap.Error(err))
+	}
 	l.Info("Application initialized")
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -6,9 +6,11 @@ import (
 
 	"github.com/korroziea/taxi/user-service/internal/config"
 	"github.com/korroziea/taxi/user-service/internal/handler"
-	authhndl "github.com/korroziea/taxi/user-service/internal/handler/auth"
+	userhndl "github.com/korroziea/taxi/user-service/internal/handler/user"
+	"github.com/korroziea/taxi/user-service/internal/repository/psql"
+	userrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/user"
 	httpserver "github.com/korroziea/taxi/user-service/internal/server/http"
-	authsrv "github.com/korroziea/taxi/user-service/internal/service/auth"
+	usersrv "github.com/korroziea/taxi/user-service/internal/service/user"
 	"go.uber.org/zap"
 )
 
@@ -20,10 +22,17 @@ type App struct {
 	srv *httpserver.Server
 }
 
-func New(l *zap.Logger, cfg config.Config) *App {
-	authService := authsrv.New()
+func New(l *zap.Logger, cfg config.Config) (*App, error) {
+	db, _, err := psql.Connect(cfg.Postgres)
+	if err != nil {
 
-	authHandler := authhndl.New(authService)
+	}
+
+	repo := userrepo.New(db)
+
+	authService := usersrv.New(repo)
+
+	authHandler := userhndl.New(authService)
 
 	handler := handler.New(authHandler).InitRoutes()
 
@@ -35,7 +44,7 @@ func New(l *zap.Logger, cfg config.Config) *App {
 		srv: srv,
 	}
 
-	return app
+	return app, nil
 }
 
 func (a *App) Run(ctx context.Context) {
