@@ -59,7 +59,7 @@ func (r *Repo) Create(ctx context.Context, user domain.SignUpUser) (domain.User,
 		).
 		Suffix(
 			fmt.Sprintf(
-				"RETURNING id, first_name, email, phone, created_at, updated_at",
+				"RETURNING id, first_name, email, phone, password, created_at, updated_at",
 			),
 		).
 		PlaceholderFormat(sq.Dollar).
@@ -73,7 +73,7 @@ func (r *Repo) Create(ctx context.Context, user domain.SignUpUser) (domain.User,
 
 func (r *Repo) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 	query, args, err := sq.
-		Select(userColumnsWithoutPassword...).
+		Select(userColumns...).
 		From(users).
 		Where(
 			sq.Eq{
@@ -120,6 +120,7 @@ func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domai
 		&user.FirstName,
 		&user.Email,
 		&user.Phone,
+		&user.Password,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

@@ -8,6 +8,11 @@ import (
 	"github.com/korroziea/taxi/user-service/internal/domain"
 )
 
+type Hasher interface {
+	Generate(password string) (string, error)
+	Verify(password, hash string) (bool, error)
+}
+
 type Repo interface {
 	Create(ctx context.Context, user domain.SignUpUser) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
@@ -15,12 +20,14 @@ type Repo interface {
 }
 
 type Service struct {
-	repo Repo
+	hasher Hasher
+	repo   Repo
 }
 
-func New(repo Repo) *Service {
+func New(hasher Hasher, repo Repo) *Service {
 	service := &Service{
-		repo: repo,
+		hasher: hasher,
+		repo:   repo,
 	}
 
 	return service
@@ -35,10 +42,14 @@ func (s *Service) SignUp(ctx context.Context, user domain.SignUpUser) error {
 	if err != nil {
 		return fmt.Errorf("domain.GenUserID: %w", err)
 	}
-
 	user.ID = userID
 
-	// todo: hash password
+	hash, err := s.hasher.Generate(user.Password)
+	if err != nil {
+		return fmt.Errorf("hasher.Generate: %w", err)
+	}
+	fmt.Println(hash)
+	user.Password = hash
 
 	_, err = s.repo.Create(ctx, user)
 	if err != nil {
@@ -62,9 +73,17 @@ func (s *Service) doesUserExist(ctx context.Context, phone string) error {
 }
 
 func (s *Service) SignIn(ctx context.Context, user domain.SignInUser) error {
-	_, err := s.repo.FindByPhoneAndPassword(ctx, user)
+	foundUser, err := s.repo.FindByPhone(ctx, user.Phone)
 	if err != nil {
 		return fmt.Errorf("repo.FindByPhoneAndPassword: %w", err)
+	}
+
+	verified, err := s.hasher.Verify(user.Password, foundUser.Password)
+	if err != nil {
+		return fmt.Errorf("hasher.Verify: %w", err) // todo: think about error
+	}
+	if verified != true {
+		return domain.ErrWrongPassword
 	}
 
 	return nil

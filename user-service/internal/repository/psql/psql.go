@@ -12,7 +12,6 @@ import (
 const connectionTimeout = 3 * time.Second
 
 func Connect(cfg config.Postgres) (*pgxpool.Pool, func(), error) {
-	fmt.Println(cfg.PostgresURL())
 	pgxCfg, err := pgxpool.ParseConfig(cfg.PostgresURL())
 	if err != nil {
 		return nil, nil, fmt.Errorf("can't parse postgres config: %w", err)

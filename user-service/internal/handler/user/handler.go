@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/korroziea/taxi/user-service/internal/domain"
 	"github.com/korroziea/taxi/user-service/internal/handler/response"
+	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -15,11 +16,13 @@ type Service interface {
 }
 
 type Handler struct {
+	l       *zap.Logger
 	service Service
 }
 
-func New(service Service) *Handler {
+func New(l *zap.Logger, service Service) *Handler {
 	handler := &Handler{
+		l:       l, // todo: fix logger
 		service: service,
 	}
 
@@ -37,12 +40,16 @@ func (h *Handler) signUp() gin.HandlerFunc {
 
 		var req signUpReq
 		if err := c.ShouldBindJSON(&req); err != nil {
+			h.l.Error("ShouldBindJSON", zap.Error(err))
+
 			response.Error(c, err)
 
 			return
 		}
 
 		if err := h.service.SignUp(ctx, req.toDomain()); err != nil {
+			h.l.Error("service.SignUp", zap.Error(err))
+
 			response.Error(c, err)
 
 			return

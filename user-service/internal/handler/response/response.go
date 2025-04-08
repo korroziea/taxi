@@ -15,7 +15,7 @@ type ErrResponse struct {
 }
 
 func Error(c *gin.Context, err error) {
-	fmt.Println(err)
+	fmt.Println("response.Error: ", err)
 
 	switch {
 	case errors.Is(err, domain.ErrUserAlreadyExists):
@@ -23,7 +23,8 @@ func Error(c *gin.Context, err error) {
 			ErrCode: -40,
 			Msg:     "user with the same phone already exists",
 		})
-	case errors.Is(err, domain.ErrUserNotFound):
+	// todo: error handling
+	case errors.Is(err, domain.ErrUserNotFound) || errors.Is(err, domain.ErrWrongPassword):
 		c.JSON(http.StatusBadRequest, ErrResponse{
 			ErrCode: -44,
 			Msg:     "phone or password is incorrect",

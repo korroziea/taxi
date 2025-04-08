@@ -12,6 +12,7 @@ import (
 	userrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/user"
 	httpserver "github.com/korroziea/taxi/user-service/internal/server/http"
 	usersrv "github.com/korroziea/taxi/user-service/internal/service/user"
+	"github.com/korroziea/taxi/user-service/pkg/hashing"
 	"go.uber.org/zap"
 )
 
@@ -25,15 +26,17 @@ type App struct {
 
 func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	db, _, err := psql.Connect(cfg.Postgres)
-	if err != nil {		
+	if err != nil {
 		return nil, fmt.Errorf("psql.Connect: %w", err)
 	}
 
 	repo := userrepo.New(db)
 
-	authService := usersrv.New(repo)
+	argon := hashing.New(cfg.Hashing)
 
-	authHandler := userhndl.New(authService)
+	authService := usersrv.New(argon, repo)
+
+	authHandler := userhndl.New(l, authService)
 
 	handler := handler.New(authHandler).InitRoutes()
 

@@ -3,18 +3,28 @@ package config
 import "fmt"
 
 type Config struct {
-	HTTPPort string `env:"HTTP_PORT, default=:3000"`
+	HTTPPort string `env:"HTTP_PORT, required"`
+
+	Hashing Hashing
 
 	Postgres Postgres
 }
 
+type Hashing struct {
+	Memory      uint32 `env:"HASHING_MEMORY, required"`
+	Iterations  uint32 `env:"HASHING_ITERATIONS, required"`
+	Parallelism uint8  `env:"HASHING_PARALLELISM, required"`
+	SaltLength  uint32 `env:"HASHING_SALT_LEN, required"`
+	KeyLength   uint32 `env:"HASHING_KEY_LEN, required"`
+}
+
 type Postgres struct {
-	Host     string `env:"POSTGRES_HOST"`
-	Port     int    `env:"POSTGRES_PORT"`
-	Database string `env:"POSTGRES_DATABASE"`
-	User     string `env:"POSTGRES_USER"`
-	Password string `env:"POSTGRES_PASSWORD"`
-	SSLMode  string `env:"POSTGRES_SSLMODE"`
+	Host     string `env:"POSTGRES_HOST, required"`
+	Port     int    `env:"POSTGRES_PORT, required"`
+	Database string `env:"POSTGRES_DATABASE, required"`
+	User     string `env:"POSTGRES_USER, required"`
+	Password string `env:"POSTGRES_PASSWORD, required"`
+	SSLMode  string `env:"POSTGRES_SSLMODE, default=disable"`
 }
 
 func (p Postgres) PostgresURL() string {
