@@ -7,6 +7,7 @@ import (
 
 	"github.com/korroziea/taxi/user-service/internal/config"
 	"github.com/korroziea/taxi/user-service/internal/handler"
+	"github.com/korroziea/taxi/user-service/internal/handler/middleware"
 	userhndl "github.com/korroziea/taxi/user-service/internal/handler/user"
 	"github.com/korroziea/taxi/user-service/internal/repository/psql"
 	userrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/user"
@@ -43,6 +44,8 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	argon := hashing.New(cfg.Hashing)
 
 	authService := usersrv.New(argon, repo)
+
+	_ = middleware.New(cfg, cache) // todo: inject authMiddleware
 
 	authHandler := userhndl.New(l, cfg, cache, authService)
 

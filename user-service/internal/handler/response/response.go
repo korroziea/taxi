@@ -15,7 +15,7 @@ type ErrResponse struct {
 }
 
 func Error(c *gin.Context, err error) {
-	fmt.Println("response.Error: ", err)
+	fmt.Println("response.Error: ", err) // todo: remove
 
 	switch {
 	case errors.Is(err, domain.ErrUserAlreadyExists):
@@ -28,6 +28,35 @@ func Error(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, ErrResponse{
 			ErrCode: -44,
 			Msg:     "phone or password is incorrect",
+		})
+	default:
+		c.JSON(http.StatusInternalServerError, ErrResponse{
+			ErrCode: -10,
+			Msg:     "internal server error",
+		})
+	}
+}
+
+func AbortUnauthorized(c *gin.Context, err error) {
+	fmt.Println("response.AbortUnauthorized: ", err) // todo: remove
+
+	switch {
+	case errors.Is(err, domain.ErrParseBearerToken):
+		c.JSON(http.StatusUnauthorized, ErrResponse{
+			ErrCode: -41,
+			Msg:     "invalid specified token. check token type and length",
+		})
+	case errors.Is(err, domain.ErrParseJWTToken) ||
+		errors.Is(err, domain.ErrParseClaims) ||
+		errors.Is(err, domain.ErrFetchSub):
+		c.JSON(http.StatusUnauthorized, ErrResponse{
+			ErrCode: -41,
+			Msg:     "invalid specified token",
+		})
+	case errors.Is(err, domain.ErrTokenNotFound):
+		c.JSON(http.StatusUnauthorized, ErrResponse{
+			ErrCode: -41,
+			Msg:     "token expired. sign in again",
 		})
 	default:
 		c.JSON(http.StatusInternalServerError, ErrResponse{
