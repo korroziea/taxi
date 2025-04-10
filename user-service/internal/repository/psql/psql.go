@@ -26,7 +26,7 @@ func Connect(cfg config.Postgres) (*pgxpool.Pool, func(), error) {
 	}
 
 	if err := pool.Ping(ctx); err != nil {
-		return nil, nil, fmt.Errorf("can't ping database: %w", err)
+		return nil, nil, fmt.Errorf("can't ping postgres: %w", err)
 	}
 
 	return pool, pool.Close, nil

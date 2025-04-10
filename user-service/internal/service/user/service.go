@@ -72,19 +72,19 @@ func (s *Service) doesUserExist(ctx context.Context, phone string) error {
 	return domain.ErrUserAlreadyExists
 }
 
-func (s *Service) SignIn(ctx context.Context, user domain.SignInUser) error {
+func (s *Service) SignIn(ctx context.Context, user domain.SignInUser) (string, error) {
 	foundUser, err := s.repo.FindByPhone(ctx, user.Phone)
 	if err != nil {
-		return fmt.Errorf("repo.FindByPhoneAndPassword: %w", err)
+		return "", fmt.Errorf("repo.FindByPhoneAndPassword: %w", err)
 	}
 
 	verified, err := s.hasher.Verify(user.Password, foundUser.Password)
 	if err != nil {
-		return fmt.Errorf("hasher.Verify: %w", err) // todo: think about error
+		return "", fmt.Errorf("hasher.Verify: %w", err)
 	}
 	if verified != true {
-		return domain.ErrWrongPassword
+		return "", domain.ErrWrongPassword
 	}
 
-	return nil
+	return foundUser.ID, nil
 }

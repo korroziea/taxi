@@ -5,9 +5,12 @@ import "fmt"
 type Config struct {
 	HTTPPort string `env:"HTTP_PORT, required"`
 
+	SecretKey string `env:"SECRET_KEY, required"`
+
 	Hashing Hashing
 
 	Postgres Postgres
+	Redis    Redis
 }
 
 type Hashing struct {
@@ -36,6 +39,25 @@ func (p Postgres) PostgresURL() string {
 		p.Password,
 		p.Database,
 		p.SSLMode,
+	)
+
+	return url
+}
+
+type Redis struct {
+	User     string `env:"REDIS_USER, required"`
+	Password string `env:"REDIS_PASSWORD, required"`
+	Addr     string `env:"REDIS_ADDR, required"`
+	DB       int    `env:"REDIS_DB, required"`
+}
+
+func (r Redis) RedisURL() string {
+	url := fmt.Sprintf(
+		"redis://%s:%s@%s/%d",
+		r.User,
+		r.Password,
+		r.Addr,
+		r.DB,
 	)
 
 	return url

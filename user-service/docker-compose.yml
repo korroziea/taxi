@@ -13,3 +13,18 @@ services:
       - ./.docker/db:/var/lib/postgresql/data/
     ports:
      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    container_name: user-redis
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      - REDIS_ADDR=${REDIS_ADDR}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
+    volumes:
+      - ./.docker/db:/var/lib/redis/data/
+    ports:
+     - "6379:6379"
