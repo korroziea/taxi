@@ -11,12 +11,17 @@ type Router interface {
 }
 
 type Handler struct {
-	Auth Router
+	User   Router
+	Wallet Router
 }
 
-func New(auth Router) *Handler {
+func New(
+	user Router,
+	wallet Router,
+) *Handler {
 	handler := &Handler{
-		Auth: auth,
+		User:   user,
+		Wallet: wallet,
 	}
 
 	return handler
@@ -25,7 +30,8 @@ func New(auth Router) *Handler {
 func (h *Handler) InitRoutes() http.Handler {
 	r := gin.New()
 
-	h.Auth.InitRoutes(r)
+	h.User.InitRoutes(r)
+	h.Wallet.InitRoutes(r)
 
 	return r
 }

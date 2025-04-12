@@ -9,12 +9,16 @@ import (
 	"github.com/korroziea/taxi/user-service/internal/handler"
 	"github.com/korroziea/taxi/user-service/internal/handler/middleware"
 	userhndl "github.com/korroziea/taxi/user-service/internal/handler/user"
+	wallethndl "github.com/korroziea/taxi/user-service/internal/handler/wallet"
 	"github.com/korroziea/taxi/user-service/internal/repository/psql"
 	userrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/user"
 	"github.com/korroziea/taxi/user-service/internal/repository/redis"
 	usercache "github.com/korroziea/taxi/user-service/internal/repository/redis/user"
+
+	walletrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/wallet"
 	httpserver "github.com/korroziea/taxi/user-service/internal/server/http"
 	usersrv "github.com/korroziea/taxi/user-service/internal/service/user"
+	walletsrv "github.com/korroziea/taxi/user-service/internal/service/wallet"
 	"github.com/korroziea/taxi/user-service/pkg/hashing"
 	"go.uber.org/zap"
 )
@@ -38,18 +42,24 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("redis.Connect: %w", err)
 	}
 
-	repo := userrepo.New(postgresDB)
+	userRepo := userrepo.New(postgresDB)
+	walletRepo := walletrepo.New(postgresDB)
 	cache := usercache.New(redisDB)
 
 	argon := hashing.New(cfg.Hashing)
 
-	authService := usersrv.New(argon, repo)
+	userService := usersrv.New(argon, userRepo)
+	walletService := walletsrv.New(walletRepo)
 
-	_ = middleware.New(cfg, cache) // todo: inject authMiddleware
+	authMiddleware := middleware.New(cfg, cache)
 
-	authHandler := userhndl.New(l, cfg, cache, authService)
+	userHandler := userhndl.New(l, cfg, cache, userService)
+	walletHandler := wallethndl.New(l, authMiddleware, walletService)
 
-	handler := handler.New(authHandler).InitRoutes()
+	handler := handler.New(
+		userHandler,
+		walletHandler,
+	).InitRoutes()
 
 	srv := httpserver.New(cfg.HTTPPort, handler)
 

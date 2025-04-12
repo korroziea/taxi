@@ -14,6 +14,8 @@ import (
 const (
 	authorizationHeader = "Authorization"
 	bearerPrefix        = "Bearer "
+
+	userIDContextKey = "X-User-ID-Context-Key"
 )
 
 type Cache interface {
@@ -58,7 +60,7 @@ func (m *Middleware) VerifyUser(c *gin.Context) {
 	tokenString = strings.TrimSpace(tokenString)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return m.cfg.SecretKey, nil
+		return []byte(m.cfg.SecretKey), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		response.AbortUnauthorized(c, domain.ErrParseJWTToken)
@@ -87,5 +89,19 @@ func (m *Middleware) VerifyUser(c *gin.Context) {
 		return
 	}
 
+	withKey(c, userID)
+
 	c.Next()
+}
+
+func withKey(c *gin.Context, userID string) {
+	c.Set(userIDContextKey, userID)
+}
+
+func FromContext(c *gin.Context) string {
+	val, _ := c.Get(userIDContextKey)
+
+	userID, _ := val.(string)
+
+	return userID
 }

@@ -42,24 +42,24 @@ func AbortUnauthorized(c *gin.Context, err error) {
 
 	switch {
 	case errors.Is(err, domain.ErrParseBearerToken):
-		c.JSON(http.StatusUnauthorized, ErrResponse{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrResponse{
 			ErrCode: -41,
 			Msg:     "invalid specified token. check token type and length",
 		})
 	case errors.Is(err, domain.ErrParseJWTToken) ||
 		errors.Is(err, domain.ErrParseClaims) ||
 		errors.Is(err, domain.ErrFetchSub):
-		c.JSON(http.StatusUnauthorized, ErrResponse{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrResponse{
 			ErrCode: -41,
 			Msg:     "invalid specified token",
 		})
 	case errors.Is(err, domain.ErrTokenNotFound):
-		c.JSON(http.StatusUnauthorized, ErrResponse{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrResponse{
 			ErrCode: -41,
 			Msg:     "token expired. sign in again",
 		})
 	default:
-		c.JSON(http.StatusInternalServerError, ErrResponse{
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrResponse{
 			ErrCode: -10,
 			Msg:     "internal server error",
 		})
