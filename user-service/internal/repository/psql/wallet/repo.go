@@ -166,6 +166,52 @@ func (r *Repo) FindByUserID(ctx context.Context) ([]domain.ViewWallet, error) {
 	return r.doViewWalletQueryRows(ctx, query, args...)
 }
 
+func (r *Repo) UpdateType(ctx context.Context, walletID string) (domain.Wallet, error) {
+	query, args, err := sq.
+		Update(wallets).
+		Set("type", domain.Family).
+		Where(
+			sq.Eq{
+				"id": walletID,
+			},
+		).
+		Suffix(
+			fmt.Sprintf(
+				"RETURNING id, type, balance, created_at, updated_at",
+			),
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Wallet{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
+func (r *Repo) UpdateBalance(ctx context.Context, walletID string, amount int64) (domain.Wallet, error) {
+	query, args, err := sq.
+		Update(wallets).
+		Set("balance", amount). // todo: sum with previous
+		Where(
+			sq.Eq{
+				"id": walletID,
+			},
+		).
+		Suffix(
+			fmt.Sprintf(
+				"RETURNING id, type, balance, created_at, updated_at",
+			),
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Wallet{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
 const queryTimeout = 5 * time.Second
 
 func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domain.Wallet, error) {

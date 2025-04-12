@@ -46,6 +46,11 @@ func WalletError(c *gin.Context, err error) {
 			ErrCode: -44,
 			Msg:     "wallet not found",
 		})
+	default:
+		c.JSON(http.StatusInternalServerError, ErrResponse{
+			ErrCode: -10,
+			Msg:     "internal server error",
+		})
 	}
 }
 

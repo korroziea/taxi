@@ -22,7 +22,7 @@ type Service interface {
 	WalletList(ctx context.Context) ([]domain.ViewWallet, error)
 	Wallet(ctx context.Context, walletID string) (domain.ViewWallet, error)
 	ChangeType(ctx context.Context, walletID string) (domain.ViewWallet, error)
-	Refill(ctx context.Context, amount int64) (domain.ViewWallet, error)
+	Refill(ctx context.Context, walletID string, amount int64) (domain.ViewWallet, error)
 }
 
 type Handler struct {
@@ -49,6 +49,8 @@ func (h *Handler) InitRoutes(router gin.IRouter) {
 	router.POST("/wallets", h.middleware.VerifyUser, h.createWallet())
 	router.GET("/wallets", h.middleware.VerifyUser, h.walletList())
 	router.GET("/wallets/:id", h.middleware.VerifyUser, h.wallet())
+	router.PUT("/wallets/:id/type", h.middleware.VerifyUser, h.changeType())
+	router.PUT("/wallets/:id/refill", h.middleware.VerifyUser, h.refill())
 }
 
 func (h *Handler) createWallet() gin.HandlerFunc {
@@ -59,7 +61,7 @@ func (h *Handler) createWallet() gin.HandlerFunc {
 		if err != nil {
 			h.l.Error("service.CreateWallet", zap.Error(err))
 
-			response.UserError(c, err) // todo: error handling
+			response.WalletError(c, err) // todo: error handling
 
 			return
 		}
@@ -76,7 +78,7 @@ func (h *Handler) walletList() gin.HandlerFunc {
 		if err != nil {
 			h.l.Error("service.WalletList", zap.Error(err))
 
-			response.UserError(c, err) // todo: error handling
+			response.WalletError(c, err) // todo: error handling
 
 			return
 		}
@@ -93,7 +95,50 @@ func (h *Handler) wallet() gin.HandlerFunc {
 		if err != nil {
 			h.l.Error("service.Wallet", zap.Error(err))
 
-			response.UserError(c, err) // todo: error handling
+			response.WalletError(c, err) // todo: error handling
+
+			return
+		}
+
+		c.JSON(http.StatusOK, toWalletView(wallet))
+	}
+}
+
+func (h *Handler) changeType() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		wallet, err := h.service.ChangeType(ctx, c.Param(idURLParam))
+		if err != nil {
+			h.l.Error("service.ChangeType", zap.Error(err))
+
+			response.WalletError(c, err) // todo: error handling
+
+			return
+		}
+
+		c.JSON(http.StatusOK, toWalletView(wallet))
+	}
+}
+
+func (h *Handler) refill() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		var req refillReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			h.l.Error("ShouldBindJSON", zap.Error(err))
+
+			response.WalletError(c, err) // todo: error handling
+
+			return
+		}
+
+		wallet, err := h.service.Refill(ctx, c.Param(idURLParam), req.Amount)
+		if err != nil {
+			h.l.Error("service.Refill", zap.Error(err))
+
+			response.WalletError(c, err) // todo: error handling
 
 			return
 		}

@@ -36,3 +36,7 @@ func toWalletListView(wallets []domain.ViewWallet) walletListResp {
 
 	return resp
 }
+
+type refillReq struct {
+	Amount int64 `json:"amount"`
+}
