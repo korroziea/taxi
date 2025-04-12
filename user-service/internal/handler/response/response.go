@@ -14,7 +14,7 @@ type ErrResponse struct {
 	Msg     string `json:"message"`
 }
 
-func Error(c *gin.Context, err error) {
+func UserError(c *gin.Context, err error) {
 	fmt.Println("response.Error: ", err) // todo: remove
 
 	switch {
@@ -33,6 +33,18 @@ func Error(c *gin.Context, err error) {
 		c.JSON(http.StatusInternalServerError, ErrResponse{
 			ErrCode: -10,
 			Msg:     "internal server error",
+		})
+	}
+}
+
+func WalletError(c *gin.Context, err error) {
+	fmt.Println("response.WalletError: ", err) // todo: remove
+
+	switch {
+	case errors.Is(err, domain.ErrWalletNotFound):
+		c.JSON(http.StatusNotFound, ErrResponse{
+			ErrCode: -44,
+			Msg:     "wallet not found",
 		})
 	}
 }

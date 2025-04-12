@@ -15,7 +15,6 @@ const (
 
 type Wallet struct {
 	ID        string
-	OwnerID   string
 	Type      WalletType
 	Balance   int64
 	CreatedAt time.Time
@@ -29,4 +28,26 @@ func GenWalletID() (string, error) {
 	}
 
 	return "wallet_" + id, nil
+}
+
+type UserWalletRole string
+
+const (
+	Owner  UserWalletRole = "owner"
+	Member UserWalletRole = "member"
+)
+
+type UserWallet struct {
+	UserID    string
+	WalletID  string
+	Role      UserWalletRole
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type ViewWallet struct {
+	ID      string
+	Type    WalletType
+	Role    UserWalletRole
+	Balance int64
 }

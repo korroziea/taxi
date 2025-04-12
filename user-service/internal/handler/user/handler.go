@@ -63,7 +63,7 @@ func (h *Handler) signUp() gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			h.l.Error("ShouldBindJSON", zap.Error(err))
 
-			response.Error(c, err)
+			response.UserError(c, err)
 
 			return
 		}
@@ -71,7 +71,7 @@ func (h *Handler) signUp() gin.HandlerFunc {
 		if err := h.service.SignUp(ctx, req.toDomain()); err != nil {
 			h.l.Error("service.SignUp", zap.Error(err))
 
-			response.Error(c, err)
+			response.UserError(c, err)
 
 			return
 		}
@@ -86,20 +86,20 @@ func (h *Handler) signIn() gin.HandlerFunc {
 
 		var req signInReq
 		if err := c.ShouldBindJSON(&req); err != nil {
-			response.Error(c, err)
+			response.UserError(c, err)
 
 			return
 		}
 
 		userID, err := h.service.SignIn(ctx, req.toDomain())
 		if err != nil {
-			response.Error(c, err)
+			response.UserError(c, err)
 
 			return
 		}
 
 		if err = h.genToken(ctx, userID); err != nil {
-			response.Error(c, err)
+			response.UserError(c, err)
 
 			return
 		}

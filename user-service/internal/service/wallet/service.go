@@ -8,7 +8,9 @@ import (
 )
 
 type Repo interface {
-	Create(ctx context.Context, walletID string) (domain.Wallet, error)
+	Create(ctx context.Context, walletID string) (domain.ViewWallet, error)
+	FindByUserID(ctx context.Context) ([]domain.ViewWallet, error)
+	FindByUserAndWalletIDs(ctx context.Context, walletID string) (domain.ViewWallet, error)
 }
 
 type Service struct {
@@ -23,24 +25,42 @@ func New(repo Repo) *Service {
 	return service
 }
 
-func (s *Service) CreateWallet(ctx context.Context) (domain.Wallet, error) {
+func (s *Service) CreateWallet(ctx context.Context) (domain.ViewWallet, error) {
 	walletID, err := domain.GenWalletID()
 	if err != nil {
-		return domain.Wallet{}, fmt.Errorf("GenWalletID: %w", err)
+		return domain.ViewWallet{}, fmt.Errorf("GenWalletID: %w", err)
 	}
 
 	wallet, err := s.repo.Create(ctx, walletID)
 	if err != nil {
-		return domain.Wallet{}, fmt.Errorf("repo.Create: %w", err)
+		return domain.ViewWallet{}, fmt.Errorf("repo.Create: %w", err)
 	}
 
 	return wallet, nil
 }
 
-func (s *Service) ChangeType(ctx context.Context, walletID string) (domain.Wallet, error) {
-	return domain.Wallet{}, nil
+func (s *Service) WalletList(ctx context.Context) ([]domain.ViewWallet, error) {
+	wallets, err := s.repo.FindByUserID(ctx)
+	if err != nil {
+		return []domain.ViewWallet{}, fmt.Errorf("repo.FindByUserID: %w", err)
+	}
+
+	return wallets, nil
 }
 
-func (s *Service) Refill(ctx context.Context, amount int64) (int64, error) {
-	return 0, nil
+func (s *Service) Wallet(ctx context.Context, walletID string) (domain.ViewWallet, error) {
+	wallet, err := s.repo.FindByUserAndWalletIDs(ctx, walletID)
+	if err != nil {
+		return domain.ViewWallet{}, fmt.Errorf("repo.FindByUserAndWalletIDs: %w", err)
+	}
+
+	return wallet, nil
+}
+
+func (s *Service) ChangeType(ctx context.Context, walletID string) (domain.ViewWallet, error) {
+	return domain.ViewWallet{}, nil
+}
+
+func (s *Service) Refill(ctx context.Context, amount int64) (domain.ViewWallet, error) {
+	return domain.ViewWallet{}, nil
 }
