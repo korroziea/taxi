@@ -1,0 +1,11 @@
+BEGIN;
+
+DROP TABLE IF EXISTS drivers;
+
+DROP TYPE work_status;
+
+DROP TABLE IF EXISTS cars;
+
+DROP TYPE car_type;
+
+COMMIT;
