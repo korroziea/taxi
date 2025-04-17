@@ -3,7 +3,7 @@ BEGIN;
 CREATE TYPE car_type AS ENUM (
 	'economy',
 	'comfort',
-	"business"
+	'business'
 );
 
 CREATE TABLE IF NOT EXISTS cars(
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS cars(
 CREATE TYPE work_status AS ENUM (
 	'free',
 	'busy',
-	"off-shift"
+	'off-shift'
 );
 
 CREATE TABLE IF NOT EXISTS drivers(
@@ -28,13 +28,13 @@ CREATE TABLE IF NOT EXISTS drivers(
 	phone 	   VARCHAR(15) NOT NULL,
 	password   TEXT 	   NOT NULL,
 	rate       SMALLINT    DEFAULT 0,
-	status     work_status DEFAULT "off-shift",
+	status     work_status DEFAULT 'off-shift',
 	car_id     VARCHAR(50),
 	created_at TIMESTAMP   DEFAULT NOW(),
    	updated_at TIMESTAMP   DEFAULT NOW(),
     
    	FOREIGN KEY (car_id) REFERENCES cars (id)
-      	ON UPDATE CASCADE,
+      	ON UPDATE CASCADE
 );
 
 COMMIT;
