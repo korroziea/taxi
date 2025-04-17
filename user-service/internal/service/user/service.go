@@ -48,7 +48,6 @@ func (s *Service) SignUp(ctx context.Context, user domain.SignUpUser) error {
 	if err != nil {
 		return fmt.Errorf("hasher.Generate: %w", err)
 	}
-	fmt.Println(hash)
 	user.Password = hash
 
 	_, err = s.repo.Create(ctx, user)

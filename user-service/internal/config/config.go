@@ -51,7 +51,7 @@ type Redis struct {
 	DB       int    `env:"REDIS_DB, required"`
 }
 
-func (r Redis) RedisURL() string {
+func (r Redis) RedisURL() string { // todo: use
 	url := fmt.Sprintf(
 		"redis://%s:%s@%s/%d",
 		r.User,
