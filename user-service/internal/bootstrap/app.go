@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/korroziea/taxi/user-service/internal/adapter/amqp"
+	trippublisher "github.com/korroziea/taxi/user-service/internal/adapter/amqp/publisher/trip"
 	"github.com/korroziea/taxi/user-service/internal/config"
 	"github.com/korroziea/taxi/user-service/internal/handler"
 	"github.com/korroziea/taxi/user-service/internal/handler/middleware"
+	triphndl "github.com/korroziea/taxi/user-service/internal/handler/trip"
 	userhndl "github.com/korroziea/taxi/user-service/internal/handler/user"
 	wallethndl "github.com/korroziea/taxi/user-service/internal/handler/wallet"
 	"github.com/korroziea/taxi/user-service/internal/repository/psql"
 	userrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/user"
+	walletrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/wallet"
 	"github.com/korroziea/taxi/user-service/internal/repository/redis"
 	usercache "github.com/korroziea/taxi/user-service/internal/repository/redis/user"
-
-	walletrepo "github.com/korroziea/taxi/user-service/internal/repository/psql/wallet"
 	httpserver "github.com/korroziea/taxi/user-service/internal/server/http"
+	tripsrv "github.com/korroziea/taxi/user-service/internal/service/trip"
 	usersrv "github.com/korroziea/taxi/user-service/internal/service/user"
 	walletsrv "github.com/korroziea/taxi/user-service/internal/service/wallet"
 	"github.com/korroziea/taxi/user-service/pkg/hashing"
@@ -42,23 +45,33 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("redis.Connect: %w", err)
 	}
 
+	amqpConn, _, err := amqp.Connect(cfg.AMQP)
+	if err != nil {
+		return nil, fmt.Errorf("amqp.Connect: %w", err)
+	}
+
 	userRepo := userrepo.New(postgresDB)
 	walletRepo := walletrepo.New(postgresDB)
 	cache := usercache.New(redisDB)
+
+	tripPublisher := trippublisher.New(amqpConn)
 
 	argon := hashing.New(cfg.Hashing)
 
 	userService := usersrv.New(argon, userRepo)
 	walletService := walletsrv.New(walletRepo)
+	tripService := tripsrv.New(tripPublisher)
 
 	authMiddleware := middleware.New(cfg, cache)
 
 	userHandler := userhndl.New(l, cfg, cache, userService)
 	walletHandler := wallethndl.New(l, authMiddleware, walletService)
+	tripHandler := triphndl.New(l, authMiddleware, tripService)
 
 	handler := handler.New(
 		userHandler,
 		walletHandler,
+		tripHandler,
 	).InitRoutes()
 
 	srv := httpserver.New(cfg.HTTPPort, handler)

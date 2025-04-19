@@ -54,6 +54,18 @@ func WalletError(c *gin.Context, err error) {
 	}
 }
 
+func TripError(c *gin.Context, err error) {
+	fmt.Println("response.TripError: ", err) // todo: remove
+
+	switch {
+	default:
+		c.JSON(http.StatusInternalServerError, ErrResponse{
+			ErrCode: -10,
+			Msg:     "internal server error",
+		})
+	}
+}
+
 func AbortUnauthorized(c *gin.Context, err error) {
 	fmt.Println("response.AbortUnauthorized: ", err) // todo: remove
 

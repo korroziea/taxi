@@ -17,7 +17,7 @@ type Server struct {
 }
 
 func New(address string, handler http.Handler) *Server {
-	s := &Server{
+	server := &Server{
 		httpSrv: http.Server{
 			Addr:              address,
 			Handler:           handler,
@@ -27,7 +27,7 @@ func New(address string, handler http.Handler) *Server {
 		},
 	}
 
-	return s
+	return server
 }
 
 func (s *Server) ListenAndServe() error {
