@@ -1,0 +1,16 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: trip-rabbit
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      - RABBITMQ_DEFAULT_USER=${AMQP_USER}
+      - RABBITMQ_DEFAULT_PASS=${AMQP_PASSWORD}
+    volumes:
+      - ~/.docker/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker/rabbitmq/log/:/var/log/rabbitmq
+    ports:
+     - "5672:5672"
+     - "15672:15672"
