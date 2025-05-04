@@ -20,6 +20,7 @@ type MapPoint struct {
 }
 
 type StartTrip struct {
+	UserID    string
 	Start     MapPoint
 	End       MapPoint
 	Cost      int64

@@ -61,7 +61,10 @@ func (h *Handler) startTrip() gin.HandlerFunc {
 			return
 		}
 
-		err := h.service.StartTrip(ctx, req.toDomain())
+		trip := req.toDomain()
+		trip.UserID = FromContext(ctx)
+
+		err := h.service.StartTrip(ctx, trip)
 		if err != nil {
 			h.l.Error("service.StartTrip", zap.Error(err))
 

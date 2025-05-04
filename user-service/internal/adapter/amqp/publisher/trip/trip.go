@@ -2,6 +2,7 @@ package trip
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -41,6 +42,11 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 		return fmt.Errorf("ch.QueueDeclare: %w", err)
 	}
 
+	body, err := json.Marshal(toStartTripBody(trip))
+	if err != nil {
+		return fmt.Errorf("json.Marshal: %w", err)
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
 	defer cancel()
 
@@ -52,7 +58,7 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 		false,
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte("Hello"),
+			Body:        body,
 		},
 	)
 	if err != nil {
