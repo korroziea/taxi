@@ -9,6 +9,7 @@ var (
 	ErrInvalidHashFormat  = errors.New("invalid hash format")
 	ErrInvalidHashType    = errors.New("invalid hash type")
 	ErrInvalidHashVersion = errors.New("invalid hash version")
+	ErrWrongPassword      = errors.New("wrong password")
 
 	ErrParseBearerToken = errors.New("invalid token")
 	ErrParseJWTToken    = errors.New("can't parse jwt token")
@@ -18,5 +19,6 @@ var (
 
 	ErrDriverAlreadyExists = errors.New("driver already exists")
 	ErrDriverNotFound      = errors.New("driver not found")
-	ErrWrongPassword       = errors.New("wrong password")
+
+	ErrDriverCarNotFound = errors.New("driver or car not found")
 )

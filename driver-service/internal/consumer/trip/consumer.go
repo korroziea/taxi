@@ -1,37 +1,36 @@
-package user
+package trip
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/korroziea/taxi/trip-service/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 )
 
 const (
-	startTripQueueName = "start-trip"
+	findDriverQueueName = "find-driver"
 )
 
 type TripService interface {
-	StartTrip(ctx context.Context, trip domain.StartTrip) error
+	AcceptOrder(ctx context.Context, tripID string) error
 }
 
 type Consumer struct {
 	l           *zap.Logger
-	ch          *amqp.Channel
+	conn        *amqp.Connection
 	tripServive TripService
 }
 
 func New(
 	l *zap.Logger,
-	ch *amqp.Channel,
+	conn *amqp.Connection,
 	tripServive TripService,
 ) *Consumer {
 	consumer := &Consumer{
 		l:           l,
-		ch:          ch,
+		conn:        conn,
 		tripServive: tripServive,
 	}
 
@@ -39,8 +38,14 @@ func New(
 }
 
 func (c *Consumer) Consume(ctx context.Context) {
-	q, err := c.ch.QueueDeclare(
-		startTripQueueName,
+	ch, err := c.conn.Channel()
+	if err != nil {
+		c.l.Fatal("conn.Channel", zap.Error(err))
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		findDriverQueueName,
 		false,
 		false,
 		false,
@@ -51,7 +56,7 @@ func (c *Consumer) Consume(ctx context.Context) {
 		c.l.Fatal("ch.QueueDeclare", zap.Error(err))
 	}
 
-	msgs, err := c.ch.Consume(
+	msgs, err := ch.Consume(
 		q.Name,
 		"",
 		true,
@@ -68,16 +73,17 @@ func (c *Consumer) Consume(ctx context.Context) {
 
 	go func() {
 		for m := range msgs {
-			var trip startTrip
-			if err := json.Unmarshal(m.Body, &trip); err != nil {
+			var req findDriverReq
+			if err := json.Unmarshal(m.Body, &req); err != nil {
+				c.l.Info(string(m.Body))
 				fmt.Println("consumer - ", string(m.Body))
 				c.l.Error("json.Unmarshal: %w", zap.Error(err))
 
 				// todo: ack
 			}
 
-			if err := c.tripServive.StartTrip(context.Background(), trip.toDomain()); err != nil {
-				c.l.Error("tripServive.StartTrip: %w", zap.Error(err))
+			if err := c.tripServive.AcceptOrder(context.Background(), req.UserID); err != nil {
+				c.l.Error("tripServive.AcceptOrder: %w", zap.Error(err))
 			}
 		}
 	}()

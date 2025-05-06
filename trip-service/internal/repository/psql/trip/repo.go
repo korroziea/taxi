@@ -17,7 +17,7 @@ const trips = "trips"
 
 var (
 	tripsColumns = []string{
-		"id", "user_id", "cost", "start_point", "end_point", "distance", "duration", "driver_id", "driver_name", "driver_rating", "car_id", "car_number", "car_color", "waiting_time", "created_at", "updated_at",
+		"id", "user_id", "cost", "start_point", "end_point", "distance", "duration", "driver_id", "driver_name", "driver_rate", "car_id", "car_number", "car_color", "waiting_time", "created_at", "updated_at",
 	}
 )
 
@@ -68,6 +68,33 @@ func (r *Repo) Create(ctx context.Context, trip domain.StartTrip) (domain.Trip, 
 	return r.doQueryRow(ctx, query, args...)
 }
 
+func (r *Repo) UpdateDriverInfo(ctx context.Context, req domain.AcceptOrderReq) (domain.Trip, error) {
+	query, args, err := sq.
+		Update(trips).
+		Set("status", "waiting").
+		Set("driver_id", req.Driver.ID).
+		Set("driver_name", req.Driver.FirstName).
+		Set("driver_rate", req.Driver.Rate).
+		Set("car_id", req.Car.ID).
+		Set("car_number", req.Car.Number).
+		Set("car_color", req.Car.Color).
+		Where(
+			sq.Eq{
+				"user_id": req.UserID,
+			},
+		).
+		Suffix(
+			"RETURNING *",
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
 const queryTimeout = 5 * time.Second
 
 func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domain.Trip, error) {
@@ -89,6 +116,7 @@ func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domai
 	)
 	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&trip.ID,
+		&trip.Status,
 		&trip.UserID,
 		&trip.Cost,
 		&trip.Start,

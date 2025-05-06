@@ -4,18 +4,22 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/korroziea/taxi/trip-service/internal/adapter/amqp"
+	driverpublisher "github.com/korroziea/taxi/trip-service/internal/adapter/amqp/publisher/driver"
 	"github.com/korroziea/taxi/trip-service/internal/config"
-	"github.com/korroziea/taxi/trip-service/internal/consumer"
+	driverconsumer "github.com/korroziea/taxi/trip-service/internal/consumer/driver"
 	userconsumer "github.com/korroziea/taxi/trip-service/internal/consumer/user"
 	"github.com/korroziea/taxi/trip-service/internal/repository/psql"
 	triprepo "github.com/korroziea/taxi/trip-service/internal/repository/psql/trip"
-	tripservice "github.com/korroziea/taxi/trip-service/internal/service/user"
+	driverservice "github.com/korroziea/taxi/trip-service/internal/service/driver"
+	userservice "github.com/korroziea/taxi/trip-service/internal/service/user"
 	"go.uber.org/zap"
 )
 
 type App struct {
-	l            *zap.Logger
-	userConsumer *userconsumer.Consumer
+	l              *zap.Logger
+	userConsumer   *userconsumer.Consumer
+	driverConsumer *driverconsumer.Consumer
 }
 
 func New(l *zap.Logger, cfg config.Config) (*App, error) {
@@ -24,20 +28,25 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("psql.Connect: %w", err)
 	}
 
-	amqpConn, _, err := consumer.Connect(cfg.AMQP)
+	amqpConn, amqpCh, _, err := amqp.Connect(cfg.AMQP)
 	if err != nil {
 		return nil, fmt.Errorf("consumer.Connect: %w", err)
 	}
 
 	tripRepo := triprepo.New(postgresDB)
 
-	tripService := tripservice.New(tripRepo)
+	driverPublisher := driverpublisher.New(amqpConn)
 
-	userConsumer := userconsumer.New(l, amqpConn, tripService)
+	userService := userservice.New(tripRepo, driverPublisher)
+	driverService := driverservice.New(tripRepo)
+
+	userConsumer := userconsumer.New(l, amqpCh, userService)
+	driverConsumer := driverconsumer.New(l, amqpCh, driverService)
 
 	app := &App{
-		l:            l,
-		userConsumer: userConsumer,
+		l:              l,
+		userConsumer:   userConsumer,
+		driverConsumer: driverConsumer,
 	}
 
 	return app, nil
@@ -46,6 +55,10 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 func (a *App) Run(ctx context.Context) {
 	go func() {
 		a.userConsumer.Consume(ctx)
+	}()
+
+	go func() {
+		a.driverConsumer.Consume(ctx)
 	}()
 
 	<-ctx.Done()

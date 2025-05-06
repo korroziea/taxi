@@ -6,6 +6,16 @@ import (
 	"github.com/korroziea/taxi/trip-service/pkg/utils"
 )
 
+type TripStatus string
+
+const (
+	Processing TripStatus = "processing"
+	Waiting    TripStatus = "waiting"
+	Executing  TripStatus = "executing"
+	Finished   TripStatus = "finished"
+	Canceled   TripStatus = "canceled"
+)
+
 func GenTripID() (string, error) {
 	id, err := utils.GenID()
 	if err != nil {
@@ -17,6 +27,7 @@ func GenTripID() (string, error) {
 
 type Trip struct {
 	ID           string
+	Status       TripStatus
 	UserID       string
 	Cost         int64
 	Start        MapPoint
@@ -32,4 +43,10 @@ type Trip struct {
 	WaitingTime  int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+type MapPoint struct {
+	Lon  float64
+	Lan  float64
+	Type string
 }

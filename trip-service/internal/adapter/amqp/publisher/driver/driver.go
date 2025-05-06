@@ -1,4 +1,4 @@
-package trip
+package driver
 
 import (
 	"context"
@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/korroziea/taxi/user-service/internal/domain"
+	"github.com/korroziea/taxi/trip-service/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const publishTimeout = 3 * time.Second
+const (
+	publishTimeout = 3 * time.Second
+
+	findDriverQueueName = "find-driver"
+)
 
 type Adapter struct {
 	conn *amqp.Connection
@@ -24,14 +28,14 @@ func New(conn *amqp.Connection) *Adapter {
 	return adapter
 }
 
-func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
+func (a *Adapter) FindDriver(ctx context.Context, req domain.FindDriverReq) error {
 	ch, err := a.conn.Channel()
 	if err != nil {
 		return fmt.Errorf("conn.Channel: %w", err)
 	}
 
 	q, err := ch.QueueDeclare(
-		"start-trip",
+		findDriverQueueName,
 		false,
 		false,
 		false,
@@ -42,11 +46,11 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 		return fmt.Errorf("ch.QueueDeclare: %w", err)
 	}
 
-	body, err := json.Marshal(toStartTripBody(trip))
+	body, err := json.Marshal(toFindDriverBody(req))
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
-	fmt.Println("publisher - ", trip)
+	fmt.Println("publisher - ", req)
 
 	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
 	defer cancel()
@@ -66,9 +70,5 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 		return fmt.Errorf("ch.PublishWithContext: %w", err)
 	}
 
-	return nil
-}
-
-func (a *Adapter) CancelTrip(ctx context.Context) error {
 	return nil
 }

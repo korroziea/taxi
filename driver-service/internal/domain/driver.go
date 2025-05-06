@@ -74,3 +74,21 @@ type SignInDriver struct {
 	Phone    string
 	Password string
 }
+
+type acceptOrderDriver struct {
+	ID        string
+	FirstName string
+	Rate      int16
+}
+
+type acceptOrderCar struct {
+	ID     string
+	Number string
+	Color  string
+}
+
+type AcceptOrderResp struct {
+	UserID string
+	Driver acceptOrderDriver
+	Car    acceptOrderCar
+}

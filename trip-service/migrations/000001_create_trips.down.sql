@@ -1,1 +1,7 @@
+BEGIN;
+
 DROP TABLE IF EXISTS trips;
+
+DROP TYPE status_type;
+
+COMMIT;

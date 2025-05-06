@@ -11,13 +11,19 @@ type Repo interface {
 	Create(ctx context.Context, trip domain.StartTrip) (domain.Trip, error)
 }
 
-type Service struct {
-	repo Repo
+type Adapter interface {
+	FindDriver(ctx context.Context, req domain.FindDriverReq) error
 }
 
-func New(repo Repo) *Service {
+type Service struct {
+	repo    Repo
+	adapter Adapter
+}
+
+func New(repo Repo, adapter Adapter) *Service {
 	service := &Service{
-		repo: repo,
+		repo:    repo,
+		adapter: adapter,
 	}
 
 	return service
@@ -35,5 +41,9 @@ func (s *Service) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 		return fmt.Errorf("repo.Create: %w", err)
 	}
 
-	return nil
+	req := domain.FindDriverReq{
+		UserID: trip.UserID,
+	}
+
+	return s.adapter.FindDriver(ctx, req)
 }

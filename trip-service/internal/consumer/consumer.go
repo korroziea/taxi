@@ -1,24 +1,30 @@
 package consumer
 
-import (
-	"fmt"
-	"log"
+// import (
+// 	"fmt"
+// 	"log"
 
-	"github.com/korroziea/taxi/trip-service/internal/config"
-	amqp "github.com/rabbitmq/amqp091-go"
-)
+// 	"github.com/korroziea/taxi/trip-service/internal/config"
+// 	amqp "github.com/rabbitmq/amqp091-go"
+// )
 
-func Connect(cfg config.AMQP) (*amqp.Connection, func(), error) {
-	conn, err := amqp.Dial(cfg.AMQPURL())
-	if err != nil {
-		return nil, nil, fmt.Errorf("amqp.Dial: %w", err)
-	}
+// func Connect(cfg config.AMQP) (*amqp.Connection, *amqp.Channel, func(), error) {
+// 	conn, err := amqp.Dial(cfg.AMQPURL())
+// 	if err != nil {
+// 		return nil, nil, nil, fmt.Errorf("amqp.Dial: %w", err)
+// 	}
+// 	defer conn.Close()
 
-	amqpDeferFunc := func() {
-		if err := conn.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}
+// 	ch, err := conn.Channel()
+// 	if err != nil {
+// 		return nil, nil, nil, fmt.Errorf("conn.Channel: %w", err)
+// 	}
 
-	return conn, amqpDeferFunc, nil
-}
+// 	amqpDeferFunc := func() {
+// 		if err := ch.Close(); err != nil {
+// 			log.Fatal(err)
+// 		}
+// 	}
+
+// 	return conn, ch, amqpDeferFunc, nil
+// }

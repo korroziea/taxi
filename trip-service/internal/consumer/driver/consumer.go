@@ -1,4 +1,4 @@
-package user
+package driver
 
 import (
 	"context"
@@ -11,28 +11,28 @@ import (
 )
 
 const (
-	startTripQueueName = "start-trip"
+	acceptTripQueueName = "accept-trip"
 )
 
-type TripService interface {
-	StartTrip(ctx context.Context, trip domain.StartTrip) error
+type DriverService interface {
+	AcceptOrder(ctx context.Context, req domain.AcceptOrderReq) error
 }
 
 type Consumer struct {
-	l           *zap.Logger
-	ch          *amqp.Channel
-	tripServive TripService
+	l             *zap.Logger
+	ch            *amqp.Channel
+	driverService DriverService
 }
 
 func New(
 	l *zap.Logger,
 	ch *amqp.Channel,
-	tripServive TripService,
+	driverService DriverService,
 ) *Consumer {
 	consumer := &Consumer{
-		l:           l,
-		ch:          ch,
-		tripServive: tripServive,
+		l:             l,
+		ch:            ch,
+		driverService: driverService,
 	}
 
 	return consumer
@@ -40,7 +40,7 @@ func New(
 
 func (c *Consumer) Consume(ctx context.Context) {
 	q, err := c.ch.QueueDeclare(
-		startTripQueueName,
+		acceptTripQueueName,
 		false,
 		false,
 		false,
@@ -68,16 +68,17 @@ func (c *Consumer) Consume(ctx context.Context) {
 
 	go func() {
 		for m := range msgs {
-			var trip startTrip
-			if err := json.Unmarshal(m.Body, &trip); err != nil {
+			var req acceptTripReq
+			if err := json.Unmarshal(m.Body, &req); err != nil {
+				c.l.Info(string(m.Body))
 				fmt.Println("consumer - ", string(m.Body))
 				c.l.Error("json.Unmarshal: %w", zap.Error(err))
 
 				// todo: ack
 			}
 
-			if err := c.tripServive.StartTrip(context.Background(), trip.toDomain()); err != nil {
-				c.l.Error("tripServive.StartTrip: %w", zap.Error(err))
+			if err := c.driverService.AcceptOrder(ctx, req.toDomain()); err != nil {
+				c.l.Error("driverService.AcceptOrder: %w", zap.Error(err))
 			}
 		}
 	}()
