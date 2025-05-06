@@ -1,5 +1,5 @@
 package trip
 
 type findDriverReq struct {
-	UserID string
+	UserID string `json:"user_id"`
 }

@@ -30,7 +30,7 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 
 	amqpConn, amqpCh, _, err := amqp.Connect(cfg.AMQP)
 	if err != nil {
-		return nil, fmt.Errorf("consumer.Connect: %w", err)
+		return nil, fmt.Errorf("amqp.Connect: %w", err)
 	}
 
 	tripRepo := triprepo.New(postgresDB)

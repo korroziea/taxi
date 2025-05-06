@@ -13,7 +13,6 @@ func Connect(cfg config.AMQP) (*amqp.Connection, *amqp.Channel, func(), error) {
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("amqp.Dial: %w", err)
 	}
-	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
@@ -22,6 +21,10 @@ func Connect(cfg config.AMQP) (*amqp.Connection, *amqp.Channel, func(), error) {
 
 	amqpDeferFunc := func() {
 		if err := ch.Close(); err != nil {
+			log.Fatal(err)
+		}
+
+		if err := conn.Close(); err != nil {
 			log.Fatal(err)
 		}
 	}

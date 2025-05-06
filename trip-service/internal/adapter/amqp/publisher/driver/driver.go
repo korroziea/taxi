@@ -33,6 +33,7 @@ func (a *Adapter) FindDriver(ctx context.Context, req domain.FindDriverReq) erro
 	if err != nil {
 		return fmt.Errorf("conn.Channel: %w", err)
 	}
+	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
 		findDriverQueueName,
@@ -50,7 +51,6 @@ func (a *Adapter) FindDriver(ctx context.Context, req domain.FindDriverReq) erro
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
-	fmt.Println("publisher - ", req)
 
 	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
 	defer cancel()

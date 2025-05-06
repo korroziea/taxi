@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/korroziea/taxi/trip-service/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -70,7 +69,6 @@ func (c *Consumer) Consume(ctx context.Context) {
 		for m := range msgs {
 			var trip startTrip
 			if err := json.Unmarshal(m.Body, &trip); err != nil {
-				fmt.Println("consumer - ", string(m.Body))
 				c.l.Error("json.Unmarshal: %w", zap.Error(err))
 
 				// todo: ack

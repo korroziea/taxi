@@ -29,6 +29,7 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 	if err != nil {
 		return fmt.Errorf("conn.Channel: %w", err)
 	}
+	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
 		"start-trip",
@@ -46,7 +47,6 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
-	fmt.Println("publisher - ", trip)
 
 	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
 	defer cancel()

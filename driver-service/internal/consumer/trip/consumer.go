@@ -3,7 +3,6 @@ package trip
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
@@ -75,8 +74,6 @@ func (c *Consumer) Consume(ctx context.Context) {
 		for m := range msgs {
 			var req findDriverReq
 			if err := json.Unmarshal(m.Body, &req); err != nil {
-				c.l.Info(string(m.Body))
-				fmt.Println("consumer - ", string(m.Body))
 				c.l.Error("json.Unmarshal: %w", zap.Error(err))
 
 				// todo: ack

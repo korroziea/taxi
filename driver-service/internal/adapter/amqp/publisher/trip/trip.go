@@ -29,6 +29,7 @@ func (a *Adapter) AcceptOrder(ctx context.Context, resp domain.AcceptOrderResp) 
 	if err != nil {
 		return fmt.Errorf("conn.Channel: %w", err)
 	}
+	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
 		"accept-trip",
@@ -46,7 +47,6 @@ func (a *Adapter) AcceptOrder(ctx context.Context, resp domain.AcceptOrderResp) 
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
-	fmt.Println("publisher - ", resp)
 
 	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
 	defer cancel()
