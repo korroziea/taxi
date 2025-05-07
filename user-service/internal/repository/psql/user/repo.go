@@ -75,6 +75,7 @@ func (r *Repo) UpdateProfile(ctx context.Context, user domain.ProfileUser) (doma
 	query, args, err := sq.
 		Update(users).
 		Set("email", user.Email).
+		Set("updated_at", time.Now()).
 		Where(
 			sq.Eq{
 				"id": user.ID,
