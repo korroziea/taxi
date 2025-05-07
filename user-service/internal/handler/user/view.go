@@ -33,3 +33,7 @@ func (r signInReq) toDomain() domain.SignInUser {
 
 	return user
 }
+
+type signInResp struct {
+	Token string `json:"token"`
+}

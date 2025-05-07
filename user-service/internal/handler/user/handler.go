@@ -98,17 +98,20 @@ func (h *Handler) signIn() gin.HandlerFunc {
 			return
 		}
 
-		if err = h.genToken(ctx, userID); err != nil {
+		token, err := h.genToken(ctx, userID)
+		if err != nil {
 			response.UserError(c, err)
 
 			return
 		}
 
-		c.JSON(http.StatusNoContent, nil)
+		c.JSON(http.StatusOK, signInResp{
+			Token: token,
+		})
 	}
 }
 
-func (h *Handler) genToken(ctx context.Context, userID string) error {
+func (h *Handler) genToken(ctx context.Context, userID string) (string, error) {
 	payload := jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(3600 * time.Second).Unix(),
@@ -118,12 +121,12 @@ func (h *Handler) genToken(ctx context.Context, userID string) error {
 
 	signedToken, err := token.SignedString([]byte(h.cfg.SecretKey))
 	if err != nil {
-		return fmt.Errorf("token.SignedString: %w", err)
+		return "", fmt.Errorf("token.SignedString: %w", err)
 	}
 
 	if err = h.cache.SetToken(ctx, userID, signedToken); err != nil {
-		return fmt.Errorf("cache.SetToken: %w", err)
+		return "", fmt.Errorf("cache.SetToken: %w", err)
 	}
 
-	return nil
+	return signedToken, nil
 }
