@@ -11,23 +11,29 @@ type Repo interface {
 	UpdateDriverInfo(ctx context.Context, req domain.AcceptOrderReq) (domain.Trip, error)
 }
 
-type Service struct {
-	repo Repo
+type Adapter interface {
+	AcceptTrip(ctx context.Context, trip domain.Trip) error
 }
 
-func New(repo Repo) *Service {
+type Service struct {
+	repo    Repo
+	adapter Adapter
+}
+
+func New(repo Repo, adapter Adapter) *Service {
 	service := &Service{
-		repo: repo,
+		repo:    repo,
+		adapter: adapter,
 	}
-	
+
 	return service
 }
 
 func (s *Service) AcceptOrder(ctx context.Context, req domain.AcceptOrderReq) error {
-	_, err := s.repo.UpdateDriverInfo(ctx, req)
+	trip, err := s.repo.UpdateDriverInfo(ctx, req)
 	if err != nil {
 		return fmt.Errorf("repo.UpdateDriverInfo: %w", err)
 	}
-	
-	return nil
+
+	return s.adapter.AcceptTrip(ctx, trip)
 }

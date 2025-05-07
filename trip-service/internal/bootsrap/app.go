@@ -6,6 +6,7 @@ import (
 
 	"github.com/korroziea/taxi/trip-service/internal/adapter/amqp"
 	driverpublisher "github.com/korroziea/taxi/trip-service/internal/adapter/amqp/publisher/driver"
+	userpublisher "github.com/korroziea/taxi/trip-service/internal/adapter/amqp/publisher/user"
 	"github.com/korroziea/taxi/trip-service/internal/config"
 	driverconsumer "github.com/korroziea/taxi/trip-service/internal/consumer/driver"
 	userconsumer "github.com/korroziea/taxi/trip-service/internal/consumer/user"
@@ -36,9 +37,10 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	tripRepo := triprepo.New(postgresDB)
 
 	driverPublisher := driverpublisher.New(amqpConn)
+	userPublisher := userpublisher.New(amqpConn)
 
 	userService := userservice.New(tripRepo, driverPublisher)
-	driverService := driverservice.New(tripRepo)
+	driverService := driverservice.New(tripRepo, userPublisher)
 
 	userConsumer := userconsumer.New(l, amqpCh, userService)
 	driverConsumer := driverconsumer.New(l, amqpCh, driverService)

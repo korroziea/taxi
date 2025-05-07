@@ -8,6 +8,7 @@ import (
 	"github.com/korroziea/taxi/user-service/internal/adapter/amqp"
 	trippublisher "github.com/korroziea/taxi/user-service/internal/adapter/amqp/publisher/trip"
 	"github.com/korroziea/taxi/user-service/internal/config"
+	tripconsumer "github.com/korroziea/taxi/user-service/internal/consumer/trip"
 	"github.com/korroziea/taxi/user-service/internal/handler"
 	"github.com/korroziea/taxi/user-service/internal/handler/middleware"
 	triphndl "github.com/korroziea/taxi/user-service/internal/handler/trip"
@@ -31,7 +32,9 @@ const shutdownTimeout = 3 * time.Second
 type App struct {
 	l   *zap.Logger
 	cfg config.Config // todo: need it?
-	srv *httpserver.Server
+
+	srv          *httpserver.Server
+	tripConsumer *tripconsumer.Consumer
 }
 
 func New(l *zap.Logger, cfg config.Config) (*App, error) {
@@ -45,7 +48,7 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 		return nil, fmt.Errorf("redis.Connect: %w", err)
 	}
 
-	amqpConn, _, err := amqp.Connect(cfg.AMQP)
+	amqpConn, amqpCh, _, err := amqp.Connect(cfg.AMQP)
 	if err != nil {
 		return nil, fmt.Errorf("amqp.Connect: %w", err)
 	}
@@ -62,6 +65,8 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	walletService := walletsrv.New(walletRepo)
 	tripService := tripsrv.New(tripPublisher)
 
+	tripConsumer := tripconsumer.New(l, amqpCh)
+
 	authMiddleware := middleware.New(cfg, cache)
 
 	userHandler := userhndl.New(l, cfg, cache, userService)
@@ -77,9 +82,10 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	srv := httpserver.New(cfg.HTTPPort, handler)
 
 	app := &App{
-		l:   l,
-		cfg: cfg,
-		srv: srv,
+		l:            l,
+		cfg:          cfg,
+		srv:          srv,
+		tripConsumer: tripConsumer,
 	}
 
 	return app, nil
@@ -92,6 +98,10 @@ func (a *App) Run(ctx context.Context) {
 		if err := a.srv.ListenAndServe(); err != nil {
 			a.l.Error("srv.ListenAndServe failed", zap.Error(err))
 		}
+	}()
+
+	go func() {
+		a.tripConsumer.Consume(ctx)
 	}()
 
 	<-ctx.Done()
