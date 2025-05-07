@@ -51,8 +51,8 @@ func New(
 }
 
 func (h *Handler) InitRoutes(router gin.IRouter) {
-	router.POST("/sign-up", h.signUp())
-	router.POST("/sign-in", h.signIn())
+	router.POST("/api/sign-up", h.signUp())
+	router.POST("/api/sign-in", h.signIn())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {
