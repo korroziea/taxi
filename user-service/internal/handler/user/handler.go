@@ -26,8 +26,9 @@ type Service interface {
 }
 
 type Handler struct {
-	l   *zap.Logger
-	cfg config.Config
+	l          *zap.Logger
+	cfg        config.Config
+	middleware *middleware.Middleware
 
 	cache Cache
 
@@ -37,12 +38,14 @@ type Handler struct {
 func New(
 	l *zap.Logger,
 	cfg config.Config,
+	middleware *middleware.Middleware,
 	cache Cache,
 	service Service,
 ) *Handler {
 	handler := &Handler{
-		l:   l, // todo: fix logger
-		cfg: cfg,
+		l:          l, // todo: fix logger
+		cfg:        cfg,
+		middleware: middleware,
 
 		cache: cache,
 
@@ -55,7 +58,7 @@ func New(
 func (h *Handler) InitRoutes(router gin.IRouter) {
 	router.POST("/api/sign-up", h.signUp())
 	router.POST("/api/sign-in", h.signIn())
-	router.PUT("/api/profile", h.profile())
+	router.PUT("/api/profile", h.middleware.VerifyUser, h.profile())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {

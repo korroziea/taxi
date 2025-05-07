@@ -69,7 +69,7 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 
 	authMiddleware := middleware.New(cfg, cache)
 
-	userHandler := userhndl.New(l, cfg, cache, userService)
+	userHandler := userhndl.New(l, cfg, authMiddleware, cache, userService)
 	walletHandler := wallethndl.New(l, authMiddleware, walletService)
 	tripHandler := triphndl.New(l, authMiddleware, tripService)
 
