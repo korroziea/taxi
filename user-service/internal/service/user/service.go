@@ -15,6 +15,8 @@ type Hasher interface {
 
 type Repo interface {
 	Create(ctx context.Context, user domain.SignUpUser) (domain.User, error)
+	UpdateProfile(ctx context.Context, user domain.ProfileUser) (domain.User, error)
+	FindByID(ctx context.Context, id string) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	FindByPhoneAndPassword(ctx context.Context, user domain.SignInUser) (domain.User, error)
 }
@@ -86,4 +88,26 @@ func (s *Service) SignIn(ctx context.Context, user domain.SignInUser) (string, e
 	}
 
 	return foundUser.ID, nil
+}
+
+func (s *Service) Profile(ctx context.Context, user domain.ProfileUser) error {
+	foundUser, err := s.repo.FindByID(ctx, user.ID)
+	if err != nil {
+		return fmt.Errorf("repo.FindByID: %w", err)
+	}
+
+	verified, err := s.hasher.Verify(user.Password, foundUser.Password)
+	if err != nil {
+		return fmt.Errorf("hasher.Verify: %w", err)
+	}
+	if verified != true {
+		return domain.ErrWrongPassword
+	}
+
+	_, err = s.repo.UpdateProfile(ctx, user)
+	if err != nil {
+		return fmt.Errorf("repo.UpdateProfile: %w", err)
+	}
+
+	return nil
 }

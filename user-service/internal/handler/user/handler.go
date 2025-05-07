@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/korroziea/taxi/user-service/internal/config"
 	"github.com/korroziea/taxi/user-service/internal/domain"
+	"github.com/korroziea/taxi/user-service/internal/handler/middleware"
 	"github.com/korroziea/taxi/user-service/internal/handler/response"
 	"go.uber.org/zap"
 )
@@ -21,6 +22,7 @@ type Cache interface {
 type Service interface {
 	SignUp(ctx context.Context, user domain.SignUpUser) error
 	SignIn(ctx context.Context, user domain.SignInUser) (string, error)
+	Profile(ctx context.Context, user domain.ProfileUser) error
 }
 
 type Handler struct {
@@ -53,6 +55,7 @@ func New(
 func (h *Handler) InitRoutes(router gin.IRouter) {
 	router.POST("/api/sign-up", h.signUp())
 	router.POST("/api/sign-in", h.signIn())
+	router.PUT("/api/profile", h.profile())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {
@@ -129,4 +132,44 @@ func (h *Handler) genToken(ctx context.Context, userID string) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func (h *Handler) profile() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		var req profileReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			h.l.Error("ShouldBindJSON", zap.Error(err))
+
+			response.UserError(c, err)
+
+			return
+		}
+
+		user := req.toDomain()
+		user.ID = FromContext(ctx)
+
+		if err := h.service.Profile(ctx, user); err != nil {
+			h.l.Error("service.Profile", zap.Error(err))
+
+			response.UserError(c, err)
+
+			return
+		}
+
+		c.JSON(http.StatusNoContent, nil)
+	}
+}
+
+type userIDContextKey struct{}
+
+func withKey(c *gin.Context) context.Context {
+	userID := middleware.FromContext(c)
+
+	return context.WithValue(c, userIDContextKey{}, userID)
+}
+
+func FromContext(ctx context.Context) string {
+	return ctx.Value(userIDContextKey{}).(string)
 }

@@ -71,6 +71,45 @@ func (r *Repo) Create(ctx context.Context, user domain.SignUpUser) (domain.User,
 	return r.doQueryRow(ctx, query, args...)
 }
 
+func (r *Repo) UpdateProfile(ctx context.Context, user domain.ProfileUser) (domain.User, error) {
+	query, args, err := sq.
+		Update(users).
+		Set("email", user.Email).
+		Where(
+			sq.Eq{
+				"id": user.ID,
+			},
+		).
+		Suffix(
+			"RETURNING *",
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
+func (r *Repo) FindByID(ctx context.Context, id string) (domain.User, error) {
+	query, args, err := sq.
+		Select(userColumns...).
+		From(users).
+		Where(
+			sq.Eq{
+				"id": id,
+			},
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
 func (r *Repo) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 	query, args, err := sq.
 		Select(userColumns...).

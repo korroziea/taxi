@@ -37,3 +37,9 @@ type SignInUser struct {
 	Phone    string
 	Password string
 }
+
+type ProfileUser struct {
+	ID       string
+	Email    string
+	Password string
+}

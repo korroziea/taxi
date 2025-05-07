@@ -37,3 +37,17 @@ func (r signInReq) toDomain() domain.SignInUser {
 type signInResp struct {
 	Token string `json:"token"`
 }
+
+type profileReq struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (r profileReq) toDomain() domain.ProfileUser {
+	user := domain.ProfileUser{
+		Email:    r.Email,
+		Password: r.Password,
+	}
+
+	return user
+}
