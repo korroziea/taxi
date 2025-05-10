@@ -3,6 +3,8 @@ package config
 import "fmt"
 
 type Config struct {
+	HTTPPort string `env:"HTTP_PORT, required"`
+	
 	Postgres Postgres
 
 	AMQP AMQP

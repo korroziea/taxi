@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"net/http"
+	"html/template"
 
 	"github.com/gin-gonic/gin"
 	"github.com/korroziea/taxi/user-service/internal/domain"
@@ -46,11 +47,15 @@ func New(
 }
 
 func (h *Handler) InitRoutes(router gin.IRouter) {
-	router.POST("/wallets", h.middleware.VerifyUser, h.createWallet())
-	router.GET("/wallets", h.middleware.VerifyUser, h.walletList())
-	router.GET("/wallets/:id", h.middleware.VerifyUser, h.wallet())
-	router.PUT("/wallets/:id/type", h.middleware.VerifyUser, h.changeType())
-	router.PUT("/wallets/:id/refill", h.middleware.VerifyUser, h.refill())
+	router.POST("/api/wallets", h.middleware.VerifyUser, h.createWallet())
+	router.GET("/api/wallets", h.middleware.VerifyUser, h.walletList())
+	router.GET("/api/wallets/:id", h.middleware.VerifyUser, h.wallet())
+	router.PUT("/api/wallets/:id/type", h.middleware.VerifyUser, h.changeType())
+	router.PUT("/api/wallets/:id/refill", h.middleware.VerifyUser, h.refill())
+	
+	router.GET("/wallets", h.wallets())
+	router.GET("/wallets/:id", h.oneWallet())
+	router.GET("/wallets/:id/refill", h.refillWallet())
 }
 
 func (h *Handler) createWallet() gin.HandlerFunc {
@@ -157,4 +162,27 @@ func withKey(c *gin.Context) context.Context {
 
 func FromContext(ctx context.Context) string {
 	return ctx.Value(userIDContextKey{}).(string)
+}
+
+const rootFrontendPath = "internal/handler/frontend/"
+
+func (h *Handler) wallets() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "wallets.html"))
+		temp.Execute(c.Writer, nil)
+	}
+}
+
+func (h *Handler) oneWallet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "wallet.html"))
+		temp.Execute(c.Writer, nil)
+	}
+}
+
+func (h *Handler) refillWallet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "refill.html"))
+		temp.Execute(c.Writer, nil)
+	}
 }

@@ -1,10 +1,14 @@
-package trip
+package user
 
 import (
 	"time"
 
-	"github.com/korroziea/taxi/user-service/internal/domain"
+	"github.com/korroziea/taxi/trip-service/internal/domain"
 )
+
+type tripsReq struct {
+	UserID string `json:"user_id"`
+}
 
 type mapPoint struct {
 	Lon  float64 `json:"lon"`
@@ -32,14 +36,14 @@ type tripResp struct {
 	UpdatedAt    time.Time         `json:"updated_at"`
 }
 
-func toTripResp(trip tripResp) domain.Trip {
-	resp := domain.Trip{
+func toTripResp(trip domain.Trip) tripResp {
+	resp := tripResp{
 		ID:           trip.ID,
 		Status:       domain.TripStatus(trip.Status),
 		UserID:       trip.UserID,
 		Cost:         trip.Cost,
-		Start:        domain.MapPoint(trip.Start),
-		End:          domain.MapPoint(trip.End),
+		Start:        mapPoint(trip.Start),
+		End:          mapPoint(trip.End),
 		Distance:     trip.Distance,
 		Duration:     trip.Duration,
 		DriverID:     trip.DriverID,
@@ -56,8 +60,8 @@ func toTripResp(trip tripResp) domain.Trip {
 	return resp
 }
 
-func toDomains(trips []tripResp) []domain.Trip {
-	resp := make([]domain.Trip, len(trips))
+func toTripsResp(trips []domain.Trip) []tripResp {
+	resp := make([]tripResp, len(trips))
 
 	for i := range resp {
 		resp[i] = toTripResp(trips[i])

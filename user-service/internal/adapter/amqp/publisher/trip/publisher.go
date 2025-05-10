@@ -69,6 +69,48 @@ func (a *Adapter) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 	return nil
 }
 
+func (a *Adapter) Trips(ctx context.Context, userID string) error {
+	ch, err := a.conn.Channel()
+	if err != nil {
+		return fmt.Errorf("conn.Channel: %w", err)
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"trips-req",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("ch.QueueDeclare: %w", err)
+	}
+
+	fmt.Println("publisher -", userID)
+
+	ctx, cancel := context.WithTimeout(ctx, publishTimeout)
+	defer cancel()
+
+	err = ch.PublishWithContext(
+		ctx,
+		"",
+		q.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(userID),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("ch.PublishWithContext: %w", err)
+	}
+
+	return nil
+}
+
 func (a *Adapter) CancelTrip(ctx context.Context) error {
 	return nil
 }

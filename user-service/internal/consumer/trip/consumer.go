@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gin-gonic/gin"
+	"github.com/korroziea/taxi/user-service/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 )
@@ -11,6 +13,10 @@ import (
 const (
 	startTripRespQueueName = "start-trip-resp"
 )
+
+type Handler interface {
+	TripsTemp(trips []domain.Trip) gin.HandlerFunc
+}
 
 type Consumer struct {
 	l  *zap.Logger
@@ -29,7 +35,7 @@ func New(
 	return consumer
 }
 
-func (c *Consumer) Consume(ctx context.Context) {
+func (c *Consumer) ConsumeStartTrip(ctx context.Context) {
 	q, err := c.ch.QueueDeclare(
 		startTripRespQueueName,
 		false,

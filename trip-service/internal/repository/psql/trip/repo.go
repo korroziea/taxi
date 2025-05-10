@@ -95,6 +95,24 @@ func (r *Repo) UpdateDriverInfo(ctx context.Context, req domain.AcceptOrderReq) 
 	return r.doQueryRow(ctx, query, args...)
 }
 
+func (r *Repo) FindTrips(ctx context.Context, userID string) ([]domain.Trip, error) {
+	query, args, err := sq.
+		Select("*").
+		From(trips).
+		Where(
+			sq.Eq{
+				"user_id": userID,
+			},
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return []domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+	
+	return r.doQueryRows(ctx, query, args...)
+}
+
 const queryTimeout = 5 * time.Second
 
 func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domain.Trip, error) {
@@ -178,4 +196,103 @@ func (r *Repo) doQueryRow(ctx context.Context, query string, args ...any) (domai
 	}
 
 	return trip, nil
+}
+
+func (r *Repo) doQueryRows(ctx context.Context, query string, args ...any) ([]domain.Trip, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []domain.Trip{}, fmt.Errorf("trips: %w", domain.ErrTripNotFound)
+		}
+
+		return []domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+	defer rows.Close()
+
+	var trips []domain.Trip
+	for rows.Next() {
+		var (
+			trip domain.Trip
+
+			distance     sql.NullInt32
+			duration     sql.NullInt32
+			driverID     sql.NullString
+			driverName   sql.NullString
+			driverRating sql.NullInt16
+			carID        sql.NullString
+			carNumber    sql.NullString
+			carColor     sql.NullString
+			waitingTime  sql.NullInt32
+		)
+
+		err := rows.Scan(
+			&trip.ID,
+			&trip.Status,
+			&trip.UserID,
+			&trip.Cost,
+			&trip.Start,
+			&trip.End,
+			&distance,
+			&duration,
+			&driverID,
+			&driverName,
+			&driverRating,
+			&carID,
+			&carNumber,
+			&carColor,
+			&waitingTime,
+			&trip.CreatedAt,
+			&trip.UpdatedAt,
+		)
+		if err != nil {
+			return []domain.Trip{}, fmt.Errorf("rows.Scan: %w", err)
+		}
+
+		if distance.Valid {
+			trip.Distance = distance.Int32
+		}
+
+		if duration.Valid {
+			trip.Duration = duration.Int32
+		}
+
+		if driverID.Valid {
+			trip.DriverID = driverID.String
+		}
+
+		if driverName.Valid {
+			trip.DriverName = driverName.String
+		}
+
+		if driverRating.Valid {
+			trip.DriverRating = driverRating.Int16
+		}
+
+		if carID.Valid {
+			trip.CarID = carID.String
+		}
+
+		if carNumber.Valid {
+			trip.CarNumber = carNumber.String
+		}
+
+		if carColor.Valid {
+			trip.CarColor = carColor.String
+		}
+
+		if waitingTime.Valid {
+			trip.WaitingTime = waitingTime.Int32
+		}
+
+		trips = append(trips, trip)
+	}
+
+	if rows.Err() != nil {
+		return []domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, rows.Err())
+	}
+
+	return trips, nil
 }

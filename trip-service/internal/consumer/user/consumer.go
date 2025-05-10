@@ -11,10 +11,12 @@ import (
 
 const (
 	startTripQueueName = "start-trip"
+	tripsQueueName     = "trips-req"
 )
 
 type TripService interface {
 	StartTrip(ctx context.Context, trip domain.StartTrip) error
+	// Trips(ctx context.Context, userID string) error
 }
 
 type Consumer struct {
@@ -37,7 +39,7 @@ func New(
 	return consumer
 }
 
-func (c *Consumer) Consume(ctx context.Context) {
+func (c *Consumer) ConsumeStartTrip(ctx context.Context) {
 	q, err := c.ch.QueueDeclare(
 		startTripQueueName,
 		false,
@@ -82,3 +84,45 @@ func (c *Consumer) Consume(ctx context.Context) {
 
 	<-forever
 }
+
+// func (c *Consumer) ConsumeTrips(ctx context.Context) {
+// 	q, err := c.ch.QueueDeclare(
+// 		tripsQueueName,
+// 		false,
+// 		false,
+// 		false,
+// 		false,
+// 		nil,
+// 	)
+// 	if err != nil {
+// 		c.l.Fatal("ch.QueueDeclare", zap.Error(err))
+// 	}
+
+// 	msgs, err := c.ch.Consume(
+// 		q.Name,
+// 		"",
+// 		true,
+// 		false,
+// 		false,
+// 		false,
+// 		nil,
+// 	)
+// 	if err != nil {
+// 		c.l.Fatal("ch.Consume", zap.Error(err))
+// 	}
+
+// 	var forever chan struct{}
+
+// 	go func() {
+// 		for m := range msgs {
+// 			userID := string(m.Body)
+// 			if err := c.tripServive.Trips(context.Background(), userID); err != nil {
+// 				c.l.Error("tripServive.Trips: %w", zap.Error(err))
+// 			}
+
+// 			fmt.Println("consumer -", userID)
+// 		}
+// 	}()
+
+// 	<-forever
+// }

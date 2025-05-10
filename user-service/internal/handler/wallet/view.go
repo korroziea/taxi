@@ -24,17 +24,13 @@ type walletListResp struct {
 	Wallets []walletResp `json:"wallets"`
 }
 
-func toWalletListView(wallets []domain.ViewWallet) walletListResp {
+func toWalletListView(wallets []domain.ViewWallet) []walletResp {
 	viewWallets := make([]walletResp, len(wallets))
 	for i := range viewWallets {
 		viewWallets[i] = toWalletView(wallets[i])
 	}
 
-	resp := walletListResp{
-		Wallets: viewWallets,
-	}
-
-	return resp
+	return viewWallets
 }
 
 type refillReq struct {

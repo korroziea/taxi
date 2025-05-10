@@ -7,6 +7,7 @@ import (
 
 	"github.com/korroziea/taxi/user-service/internal/adapter/amqp"
 	trippublisher "github.com/korroziea/taxi/user-service/internal/adapter/amqp/publisher/trip"
+	tripadapter "github.com/korroziea/taxi/user-service/internal/adapter/http/trip"
 	"github.com/korroziea/taxi/user-service/internal/config"
 	tripconsumer "github.com/korroziea/taxi/user-service/internal/consumer/trip"
 	"github.com/korroziea/taxi/user-service/internal/handler"
@@ -59,19 +60,21 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 
 	tripPublisher := trippublisher.New(amqpConn)
 
+	tripAdapter := tripadapter.New(cfg.TripAdapter)
+
 	argon := hashing.New(cfg.Hashing)
 
 	userService := usersrv.New(argon, userRepo)
 	walletService := walletsrv.New(walletRepo)
-	tripService := tripsrv.New(tripPublisher)
-
-	tripConsumer := tripconsumer.New(l, amqpCh)
+	tripService := tripsrv.New(tripPublisher, tripAdapter)
 
 	authMiddleware := middleware.New(cfg, cache)
 
 	userHandler := userhndl.New(l, cfg, authMiddleware, cache, userService)
 	walletHandler := wallethndl.New(l, authMiddleware, walletService)
 	tripHandler := triphndl.New(l, authMiddleware, tripService)
+
+	tripConsumer := tripconsumer.New(l, amqpCh)
 
 	handler := handler.New(
 		userHandler,
@@ -101,7 +104,7 @@ func (a *App) Run(ctx context.Context) {
 	}()
 
 	go func() {
-		a.tripConsumer.Consume(ctx)
+		a.tripConsumer.ConsumeStartTrip(ctx)
 	}()
 
 	<-ctx.Done()

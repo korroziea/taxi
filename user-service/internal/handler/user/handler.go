@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"time"
 
@@ -59,6 +60,11 @@ func (h *Handler) InitRoutes(router gin.IRouter) {
 	router.POST("/api/sign-up", h.signUp())
 	router.POST("/api/sign-in", h.signIn())
 	router.PUT("/api/profile", h.middleware.VerifyUser, h.profile())
+
+	router.GET("/sign-up", h.SignUpTemp())
+	router.GET("/sign-in", h.SignInTemp())
+	router.GET("/profile", h.ProfileTemp())
+	router.GET("/main", h.MainTemp())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {
@@ -175,4 +181,34 @@ func withKey(c *gin.Context) context.Context {
 
 func FromContext(ctx context.Context) string {
 	return ctx.Value(userIDContextKey{}).(string)
+}
+
+const rootFrontendPath = "internal/handler/frontend/"
+
+func (h *Handler) SignUpTemp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "signup.html"))
+		temp.Execute(c.Writer, nil)
+	}
+}
+
+func (h *Handler) SignInTemp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "signin.html"))
+		temp.Execute(c.Writer, nil)
+	}
+}
+
+func (h *Handler) ProfileTemp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "profile.html"))
+		temp.Execute(c.Writer, nil)
+	}
+}
+
+func (h *Handler) MainTemp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "main.html"))
+		temp.Execute(c.Writer, nil)
+	}
 }

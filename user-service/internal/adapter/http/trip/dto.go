@@ -6,6 +6,18 @@ import (
 	"github.com/korroziea/taxi/user-service/internal/domain"
 )
 
+type tripsReq struct {
+	UserID string `json:"user_id"`
+}
+
+func toTripsReq(userID string) tripsReq {
+	req := tripsReq{
+		UserID: userID,
+	}
+
+	return req
+}
+
 type mapPoint struct {
 	Lon  float64 `json:"lon"`
 	Lan  float64 `json:"lan"`

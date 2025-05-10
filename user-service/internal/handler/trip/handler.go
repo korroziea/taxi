@@ -2,6 +2,7 @@ package trip
 
 import (
 	"context"
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,7 @@ type Middleware interface {
 type Service interface {
 	StartTrip(ctx context.Context, trip domain.StartTrip) error
 	CancelTrip(ctx context.Context) error
+	Trips(ctx context.Context, userID string) ([]domain.Trip, error)
 	Cost(ctx context.Context) (int64, error)
 }
 
@@ -42,10 +44,14 @@ func New(
 }
 
 func (h *Handler) InitRoutes(router gin.IRouter) {
-	router.POST("/trips", h.middleware.VerifyUser, h.startTrip())
-	router.PATCH("/trips/cancel", h.middleware.VerifyUser, h.cancelTrip())
+	router.POST("/api/trips", h.middleware.VerifyUser, h.startTrip())
+	router.PATCH("/api/trips/cancel", h.middleware.VerifyUser, h.cancelTrip())
+	router.GET("/api/trips", h.middleware.VerifyUser, h.trips())
 
 	router.GET("/trips/cost", h.middleware.VerifyUser, h.cost())
+
+	// templates
+	router.GET("/trips", h.TripsRespTemp())
 }
 
 func (h *Handler) startTrip() gin.HandlerFunc {
@@ -93,6 +99,24 @@ func (h *Handler) cancelTrip() gin.HandlerFunc {
 	}
 }
 
+func (h *Handler) trips() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		userID := FromContext(ctx)
+		trips, err := h.service.Trips(ctx, userID)
+		if err != nil {
+			h.l.Error("service.Trips", zap.Error(err))
+
+			response.TripError(c, err) // todo: error handling
+
+			return
+		}
+
+		c.JSON(http.StatusOK, toTripsResp(trips))
+	}
+}
+
 func (h *Handler) cost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := withKey(c)
@@ -120,4 +144,13 @@ func withKey(c *gin.Context) context.Context {
 
 func FromContext(ctx context.Context) string {
 	return ctx.Value(userIDContextKey{}).(string)
+}
+
+const rootFrontendPath = "internal/handler/frontend/"
+
+func (h *Handler) TripsRespTemp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		temp := template.Must(template.ParseFiles(rootFrontendPath + "trips.html"))
+		temp.Execute(c.Writer, nil)
+	}
 }

@@ -12,6 +12,8 @@ type Config struct {
 	Postgres Postgres
 	Redis    Redis
 
+	TripAdapter Trip
+
 	AMQP AMQP
 }
 
@@ -63,6 +65,10 @@ func (r Redis) RedisURL() string { // todo: use
 	)
 
 	return url
+}
+
+type Trip struct {
+	URL string `env:"TRIP_URL"`
 }
 
 type AMQP struct {
