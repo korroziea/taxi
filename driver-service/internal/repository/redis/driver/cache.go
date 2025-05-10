@@ -35,3 +35,15 @@ func (c *Cache) SetToken(ctx context.Context, driverID, token string) error {
 
 	return nil
 }
+
+func (c *Cache) GetToken(ctx context.Context, driverID string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
+	val, err := c.db.Get(ctx, driverID).Result()
+	if err != nil {
+		return "", fmt.Errorf("db.Get: %w", err)
+	}
+
+	return val, nil
+}

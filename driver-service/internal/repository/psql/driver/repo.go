@@ -72,6 +72,47 @@ func (r *Repo) Create(ctx context.Context, driver domain.SignUpDriver) (domain.D
 	return r.doQueryRow(ctx, query, args...)
 }
 
+func (r *Repo) UpdateStatus(ctx context.Context, driverID string, status domain.WorkStatus) (domain.Driver, error) {
+	query, args, err := sq.
+		Update(drivers).
+		Set("status", status).
+		Where(
+			sq.Eq{
+				"id": driverID,
+			},
+		).
+		Suffix(
+			fmt.Sprintf(
+				"RETURNING *",
+			),
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Driver{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
+func (r *Repo) FindByID(ctx context.Context, driverID string) (domain.Driver, error) {
+	query, args, err := sq.
+		Select(driverColumns...).
+		From(drivers).
+		Where(
+			sq.Eq{
+				"id": driverID,
+			},
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Driver{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
 func (r *Repo) FindByPhone(ctx context.Context, phone string) (domain.Driver, error) {
 	query, args, err := sq.
 		Select(driverColumns...).

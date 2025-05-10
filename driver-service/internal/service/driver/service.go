@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/korroziea/taxi/driver-service/internal/domain"
+	"github.com/korroziea/taxi/driver-service/internal/handler/driver"
 )
 
 type Hasher interface {
@@ -14,9 +15,11 @@ type Hasher interface {
 }
 
 type Repo interface {
-	Create(ctx context.Context, user domain.SignUpDriver) (domain.Driver, error)
+	Create(ctx context.Context, driver domain.SignUpDriver) (domain.Driver, error)
+	UpdateStatus(ctx context.Context, driverID string, status domain.WorkStatus) (domain.Driver, error)
+	FindByID(ctx context.Context, driverID string) (domain.Driver, error)
 	FindByPhone(ctx context.Context, phone string) (domain.Driver, error)
-	FindByPhoneAndPassword(ctx context.Context, user domain.SignInDriver) (domain.Driver, error)
+	FindByPhoneAndPassword(ctx context.Context, driver domain.SignInDriver) (domain.Driver, error)
 }
 
 type Service struct {
@@ -86,4 +89,24 @@ func (s *Service) SignIn(ctx context.Context, driver domain.SignInDriver) (strin
 	}
 
 	return foundDriver.ID, nil
+}
+
+func (s *Service) Status(ctx context.Context) error {
+	driverID := driver.FromContext(ctx)
+	driver, err := s.repo.FindByID(ctx, driverID)
+	if err != nil {
+		return fmt.Errorf("repo.FindByID: %w", err)
+	}
+
+	workStatus := domain.OffShift
+	if driver.Status == domain.OffShift {
+		workStatus = domain.Free
+	}
+
+	_, err = s.repo.UpdateStatus(ctx, driverID, workStatus)
+	if err != nil {
+		return fmt.Errorf("repo.UpdateStatus: %w", err)
+	}
+
+	return nil
 }

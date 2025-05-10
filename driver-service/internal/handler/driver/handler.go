@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/korroziea/taxi/driver-service/internal/config"
 	"github.com/korroziea/taxi/driver-service/internal/domain"
+	"github.com/korroziea/taxi/driver-service/internal/handler/middleware"
 	"github.com/korroziea/taxi/driver-service/internal/handler/response"
 	"go.uber.org/zap"
 )
@@ -21,11 +22,13 @@ type Cache interface {
 type Service interface {
 	SignUp(ctx context.Context, driver domain.SignUpDriver) error
 	SignIn(ctx context.Context, driver domain.SignInDriver) (string, error)
+	Status(ctx context.Context) error
 }
 
 type Handler struct {
-	l   *zap.Logger
-	cfg config.Config
+	l          *zap.Logger
+	cfg        config.Config
+	middleware *middleware.Middleware
 
 	cache Cache
 
@@ -35,12 +38,14 @@ type Handler struct {
 func New(
 	l *zap.Logger,
 	cfg config.Config,
+	middleware *middleware.Middleware,
 	cache Cache,
 	service Service,
 ) *Handler {
 	handler := &Handler{
-		l:   l,
-		cfg: cfg,
+		l:          l,
+		cfg:        cfg,
+		middleware: middleware,
 
 		cache: cache,
 
@@ -51,8 +56,9 @@ func New(
 }
 
 func (h *Handler) InitRoutes(r gin.IRouter) {
-	r.POST("/sign-up", h.signUp())
-	r.POST("/sign-in", h.signIn())
+	r.POST("/api/sign-up", h.signUp())
+	r.POST("/api/sign-in", h.signIn())
+	r.PATCH("/api/status", h.middleware.VerifyUser, h.status())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {
@@ -130,4 +136,32 @@ func (h *Handler) genToken(ctx context.Context, driverID string) error {
 	}
 
 	return nil
+}
+
+func (h *Handler) status() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		if err := h.service.Status(ctx); err != nil {
+			h.l.Error("genToken", zap.Error(err))
+
+			response.DriverError(c, err)
+
+			return
+		}
+
+		c.JSON(http.StatusNoContent, nil)
+	}
+}
+
+type driverIDContextKey struct{}
+
+func withKey(c *gin.Context) context.Context {
+	driverID := middleware.FromContext(c)
+
+	return context.WithValue(c, driverIDContextKey{}, driverID)
+}
+
+func FromContext(ctx context.Context) string {
+	return ctx.Value(driverIDContextKey{}).(string)
 }

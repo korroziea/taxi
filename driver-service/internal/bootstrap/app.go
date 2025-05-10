@@ -11,6 +11,7 @@ import (
 	tripconsumer "github.com/korroziea/taxi/driver-service/internal/consumer/trip"
 	"github.com/korroziea/taxi/driver-service/internal/handler"
 	driverhndl "github.com/korroziea/taxi/driver-service/internal/handler/driver"
+	"github.com/korroziea/taxi/driver-service/internal/handler/middleware"
 	"github.com/korroziea/taxi/driver-service/internal/repository/psql"
 	driverrepo "github.com/korroziea/taxi/driver-service/internal/repository/psql/driver"
 	triprepo "github.com/korroziea/taxi/driver-service/internal/repository/psql/trip"
@@ -60,7 +61,9 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 
 	tripConsumer := tripconsumer.New(l, amqpConn, tripService)
 
-	driverHandler := driverhndl.New(l, cfg, cache, driverService)
+	authMiddleware := middleware.New(cfg, cache)
+
+	driverHandler := driverhndl.New(l, cfg, authMiddleware, cache, driverService)
 
 	handler := handler.New(driverHandler).InitRoutes()
 
