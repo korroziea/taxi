@@ -21,6 +21,7 @@ type Service interface {
 	CancelTrip(ctx context.Context) error
 	Trips(ctx context.Context, userID string) ([]domain.Trip, error)
 	Cost(ctx context.Context) (int64, error)
+	Report(ctx context.Context) ([]byte, error)
 }
 
 type Handler struct {
@@ -48,7 +49,9 @@ func (h *Handler) InitRoutes(router gin.IRouter) {
 	router.PATCH("/api/trips/cancel", h.middleware.VerifyUser, h.cancelTrip())
 	router.GET("/api/trips", h.middleware.VerifyUser, h.trips())
 
-	router.GET("/trips/cost", h.middleware.VerifyUser, h.cost())
+	router.GET("/api/trips/cost", h.middleware.VerifyUser, h.cost())
+
+	router.POST("/api/report", h.middleware.VerifyUser, h.report())
 
 	// templates
 	router.GET("/trips", h.TripsRespTemp())
@@ -131,6 +134,25 @@ func (h *Handler) cost() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusNoContent, cost) // todo
+	}
+}
+
+func (h *Handler) report() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := withKey(c)
+
+		report, err := h.service.Report(ctx)
+		if err != nil {
+			h.l.Error("service.Report", zap.Error(err))
+
+			response.TripError(c, err) // todo: error handling
+
+			return
+		}
+
+		c.Header("Content-Type", "application/pdf")
+		c.Header("Content-Disposition", "attachment; filename=cars_report.pdf")
+		c.Data(http.StatusOK, "application/pdf", report)
 	}
 }
 

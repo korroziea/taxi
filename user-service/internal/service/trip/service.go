@@ -1,9 +1,12 @@
 package trip
 
 import (
+	"bytes"
 	"context"
 
+	"github.com/jung-kurt/gofpdf"
 	"github.com/korroziea/taxi/user-service/internal/domain"
+	triphandler "github.com/korroziea/taxi/user-service/internal/handler/trip"
 )
 
 type Repo interface {
@@ -53,4 +56,47 @@ func (s *Service) Trips(ctx context.Context, userID string) ([]domain.Trip, erro
 
 func (s *Service) Cost(ctx context.Context) (int64, error) {
 	return 0, nil
+}
+
+func (s *Service) Report(ctx context.Context) ([]byte, error) {
+	trips, err := s.httpAdapter.Trips(ctx, triphandler.FromContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	// Заголовок
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(0, 10, "Car's Report")
+	pdf.Ln(12)
+
+	// Таблица с машинами
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(80, 10, "Trip ID", "1", 0, "", false, 0, "")
+	pdf.CellFormat(30, 10, "Car Number", "1", 0, "", false, 0, "")
+	pdf.CellFormat(25, 10, "Car Color", "1", 0, "", false, 0, "")
+	pdf.CellFormat(30, 10, "Car ID", "1", 0, "", false, 0, "")
+	pdf.CellFormat(60, 10, "Created At", "1", 0, "", false, 0, "")
+	pdf.Ln(10)
+
+	pdf.SetFont("Arial", "", 12)
+	for _, trip := range trips {
+		pdf.CellFormat(80, 10, trip.ID, "1", 0, "", false, 0, "")
+		pdf.CellFormat(30, 10, trip.CarNumber, "1", 0, "", false, 0, "")
+		pdf.CellFormat(25, 10, trip.CarColor, "1", 0, "", false, 0, "")
+		pdf.CellFormat(30, 10, trip.CarID, "1", 0, "", false, 0, "")
+		pdf.CellFormat(60, 10, trip.CreatedAt.String(), "1", 0, "", false, 0, "")
+		pdf.Ln(10)
+	}
+
+	// Сохраняем PDF в буфер
+	var buf bytes.Buffer
+	err = pdf.Output(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
