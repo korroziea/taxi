@@ -95,6 +95,28 @@ func (r *Repo) UpdateDriverInfo(ctx context.Context, req domain.AcceptOrderReq) 
 	return r.doQueryRow(ctx, query, args...)
 }
 
+func (r *Repo) UpdateToCanceledTrip(ctx context.Context, userID string) (domain.Trip, error) {
+	query, args, err := sq.
+		Update(trips).
+		Set("status", "canceled").
+		Set("updated_at", time.Now()).
+		Where(
+			sq.Eq{
+				"user_id": userID,
+			},
+		).
+		Suffix(
+			"RETURNING *",
+		).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
+	}
+
+	return r.doQueryRow(ctx, query, args...)
+}
+
 func (r *Repo) FindTrips(ctx context.Context, userID string) ([]domain.Trip, error) {
 	query, args, err := sq.
 		Select("*").
@@ -109,7 +131,7 @@ func (r *Repo) FindTrips(ctx context.Context, userID string) ([]domain.Trip, err
 	if err != nil {
 		return []domain.Trip{}, fmt.Errorf("%w: %w", domain.ErrInternal, err)
 	}
-	
+
 	return r.doQueryRows(ctx, query, args...)
 }
 

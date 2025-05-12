@@ -57,7 +57,7 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	argon := hashing.New(cfg.Hashing)
 
 	driverService := driversrv.New(argon, driverRepo)
-	tripService := tripsrv.New(tripRepo, tripPublisher)
+	tripService := tripsrv.New(tripRepo, driverRepo, tripPublisher)
 
 	tripConsumer := tripconsumer.New(l, amqpConn, tripService)
 
@@ -89,6 +89,10 @@ func (a *App) Run(ctx context.Context) {
 
 	go func() {
 		a.tripConsumer.Consume(ctx)
+	}()
+
+	go func() {
+		a.tripConsumer.ConsumeCancelTrip(ctx)
 	}()
 
 	<-ctx.Done()

@@ -59,8 +59,8 @@ func New(l *zap.Logger, cfg config.Config) (*App, error) {
 	srv := httpserver.New(cfg.HTTPPort, handler)
 
 	app := &App{
-		l:   l,
-		srv: srv,
+		l:              l,
+		srv:            srv,
 		userConsumer:   userConsumer,
 		driverConsumer: driverConsumer,
 	}
@@ -73,9 +73,9 @@ func (a *App) Run(ctx context.Context) {
 		a.userConsumer.ConsumeStartTrip(ctx)
 	}()
 
-	// go func() {
-	// 	a.userConsumer.ConsumeTrips(ctx)
-	// }()
+	go func() {
+		a.userConsumer.ConsumeTripCancel(ctx)
+	}()
 
 	go func() {
 		if err := a.srv.ListenAndServe(); err != nil {

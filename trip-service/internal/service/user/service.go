@@ -9,10 +9,12 @@ import (
 
 type Repo interface {
 	Create(ctx context.Context, trip domain.StartTrip) (domain.Trip, error)
+	UpdateToCanceledTrip(ctx context.Context, userID string) (domain.Trip, error)
 	FindTrips(ctx context.Context, userID string) ([]domain.Trip, error)
 }
 
 type DriverAdapter interface {
+	CancelTrip(ctx context.Context, driverID string) error
 	FindDriver(ctx context.Context, req domain.FindDriverReq) error
 }
 
@@ -53,6 +55,15 @@ func (s *Service) StartTrip(ctx context.Context, trip domain.StartTrip) error {
 	}
 
 	return s.driverAdapter.FindDriver(ctx, req)
+}
+
+func (s *Service) CancelTrip(ctx context.Context, userID string) error {
+	trip, err := s.repo.UpdateToCanceledTrip(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("repo.UpdateToCanceledTrip: %w", err)
+	}
+
+	return s.driverAdapter.CancelTrip(ctx, trip.DriverID)
 }
 
 func (s *Service) Trips(ctx context.Context, userID string) ([]domain.Trip, error) {

@@ -10,10 +10,12 @@ import (
 
 const (
 	findDriverQueueName = "find-driver"
+	cancelTripQueueName = "cancel-trip-driver-req"
 )
 
 type TripService interface {
 	AcceptOrder(ctx context.Context, tripID string) error
+	CancelTrip(ctx context.Context, driverID string) error
 }
 
 type Consumer struct {
@@ -81,6 +83,52 @@ func (c *Consumer) Consume(ctx context.Context) {
 
 			if err := c.tripServive.AcceptOrder(context.Background(), req.UserID); err != nil {
 				c.l.Error("tripServive.AcceptOrder: %w", zap.Error(err))
+			}
+		}
+	}()
+
+	<-forever
+}
+
+func (c *Consumer) ConsumeCancelTrip(ctx context.Context) {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		c.l.Fatal("conn.Channel", zap.Error(err))
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		cancelTripQueueName,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		c.l.Fatal("ch.QueueDeclare", zap.Error(err))
+	}
+
+	msgs, err := ch.Consume(
+		q.Name,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		c.l.Fatal("ch.Consume", zap.Error(err))
+	}
+
+	var forever chan struct{}
+
+	go func() {
+		for m := range msgs {
+			driverID := string(m.Body)
+			if err := c.tripServive.CancelTrip(context.Background(), driverID); err != nil {
+				c.l.Error("tripServive.CancelTrip: %w", zap.Error(err))
 			}
 		}
 	}()
