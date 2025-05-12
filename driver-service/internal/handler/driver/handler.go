@@ -22,7 +22,7 @@ type Cache interface {
 type Service interface {
 	SignUp(ctx context.Context, driver domain.SignUpDriver) error
 	SignIn(ctx context.Context, driver domain.SignInDriver) (string, error)
-	Status(ctx context.Context) error
+	Shift(ctx context.Context) error
 }
 
 type Handler struct {
@@ -58,7 +58,7 @@ func New(
 func (h *Handler) InitRoutes(r gin.IRouter) {
 	r.POST("/api/sign-up", h.signUp())
 	r.POST("/api/sign-in", h.signIn())
-	r.PATCH("/api/status", h.middleware.VerifyUser, h.status())
+	r.PATCH("/api/shift", h.middleware.VerifyUser, h.shift())
 }
 
 func (h *Handler) signUp() gin.HandlerFunc {
@@ -138,11 +138,11 @@ func (h *Handler) genToken(ctx context.Context, driverID string) error {
 	return nil
 }
 
-func (h *Handler) status() gin.HandlerFunc {
+func (h *Handler) shift() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := withKey(c)
 
-		if err := h.service.Status(ctx); err != nil {
+		if err := h.service.Shift(ctx); err != nil {
 			h.l.Error("genToken", zap.Error(err))
 
 			response.DriverError(c, err)

@@ -91,7 +91,7 @@ func (s *Service) SignIn(ctx context.Context, driver domain.SignInDriver) (strin
 	return foundDriver.ID, nil
 }
 
-func (s *Service) Status(ctx context.Context) error {
+func (s *Service) Shift(ctx context.Context) error {
 	driverID := driver.FromContext(ctx)
 	driver, err := s.repo.FindByID(ctx, driverID)
 	if err != nil {
